@@ -18,8 +18,15 @@
   </li>
   {% endfor %}
   {% if not results %}
+  {# A dead end otherwise: the reader presses the button, is told nothing was
+     there, and is left with no idea what would put something there. #}
   <li class="result result-empty">
-    <span class="result-detail">Nothing was waiting in the inbox.</span>
+    <span class="result-detail">
+      The inbox is empty, so there was nothing to import. Texts get there by
+      running <code>/adapt {{ level }} &lt;file or url&gt;</code> in Claude Code &mdash;
+      that command adapts the text and imports it for you. Press
+      <em>Add a text</em> above for the whole recipe.
+    </span>
   </li>
   {% endif %}
 </ul>

@@ -5,28 +5,63 @@
 <div class="library-head">
   <h1 class="page-title">Library</h1>
   <div class="library-actions">
-    <form hx-post="/import" hx-target="#library-body" hx-swap="innerHTML">
-      <button class="primary" type="submit">Import waiting texts</button>
-    </form>
-    <button class="secondary" type="button"
-            onclick="const box = document.querySelector('#paste'); box.hidden = !box.hidden;
-                     if (!box.hidden) box.querySelector('textarea').focus();">
-      Paste a document
+    <button class="primary" type="button"
+            onclick="const p = document.querySelector('#add-text'); p.hidden = !p.hidden;">
+      Add a text
     </button>
+    <form hx-post="/import" hx-target="#library-body" hx-swap="innerHTML">
+      <button class="secondary" type="submit">Import waiting texts</button>
+    </form>
   </div>
 </div>
 
-<section id="paste" class="paste" hidden>
-  <form hx-post="/import/paste" hx-target="#library-body" hx-swap="innerHTML"
-        hx-on::after-request="if (event.detail.successful) this.reset()">
-    <label for="document">
-      The JSON that <code>/adapt</code> produces. It is saved to the inbox before
-      it is read, so a document that fails validation is never lost.
-    </label>
-    <textarea id="document" name="document" rows="10" spellcheck="false"
-              placeholder='{"schema": 1, "level": "A1", "adapted_text": "..."}'></textarea>
-    <button class="primary" type="submit">Import this</button>
-  </form>
+{# Where texts come from. This app never adapts anything itself -- section 3 of
+   the MVP keeps the model call outside the v1 -- so the panel has to say so.
+   Without it the import button looks broken: it drains an inbox the reader has
+   no idea how to fill. #}
+<section id="add-text" class="add-text" hidden>
+  <h2 class="section-title">Where texts come from</h2>
+  <p class="add-text-lead">
+    Degrau does not rewrite anything on its own. Claude Code does the adapting,
+    in this repository, and leaves the result in <code>inbox/</code> for the app
+    to check and store.
+  </p>
+
+  <ol class="steps">
+    <li>
+      <strong>Run the command in Claude Code</strong>, pointing it at a file or a URL:
+      <pre class="command"><code>/adapt {{ level }} caminho/para/materia.txt</code></pre>
+      It reads your profile, adapts the text to that level, writes the JSON and
+      imports it. Usually nothing else is needed &mdash; the text is already here
+      when it finishes.
+    </li>
+    <li>
+      <strong>Or press <em>Import waiting texts</em></strong> if a document is
+      sitting in <code>inbox/</code> and was not imported yet.
+    </li>
+    <li>
+      <strong>Or paste the document</strong>, when the JSON came from somewhere
+      else &mdash; another conversation, another machine.
+      <button class="link-button" type="button"
+              onclick="const b = document.querySelector('#paste'); b.hidden = !b.hidden;
+                       if (!b.hidden) b.querySelector('textarea').focus();">
+        paste one now
+      </button>
+    </li>
+  </ol>
+
+  <div id="paste" class="paste" hidden>
+    <form hx-post="/import/paste" hx-target="#library-body" hx-swap="innerHTML"
+          hx-on::after-request="if (event.detail.successful) this.reset()">
+      <label for="document">
+        The JSON that <code>/adapt</code> produces. It is saved to the inbox before
+        it is read, so a document that fails validation is never lost.
+      </label>
+      <textarea id="document" name="document" rows="10" spellcheck="false"
+                placeholder='{"schema": 1, "level": "A1", "adapted_text": "..."}'></textarea>
+      <button class="primary" type="submit">Import this</button>
+    </form>
+  </div>
 </section>
 
 <div id="library-body">

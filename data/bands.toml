@@ -18,6 +18,20 @@ B2 = 2809
 # open ended. Each entry is the inclusive floor for that band; anything below
 # the lowest floor is C2. Unknown words score 0.0 and land in C2, which is the
 # behaviour we want: a word nobody counted is not a word a beginner knows.
+#
+# The floors above B2 exist because the NGSL and the lemmatiser disagree about
+# function words. The list has "they", "this", "he" and "a" as headwords, while
+# spaCy leaves "their", "these", "his" and "an" as themselves -- so thirteen of
+# the most common words in English matched nothing, fell through to this scale,
+# and were called B2. Every text containing "my" or "your" was penalised for it.
+#
+# The numbers are the median Zipf of each NGSL band, measured rather than
+# guessed: A1 5.43, A2 4.96, B1 4.59. Rounded down a little, because a word
+# frequent enough to be missing from a 2809-word list and still this common is
+# almost always an inflected function word.
+A1 = 5.4
+A2 = 4.9
+B1 = 4.5
 B2 = 4.0
 C1 = 3.0
 

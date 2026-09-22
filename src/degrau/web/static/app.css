@@ -493,3 +493,52 @@ kbd {
   background: var(--card);
   color: var(--ink);
 }
+
+/* --- where texts come from ------------------------------------------------ */
+
+.add-text {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+.add-text .section-title { margin-bottom: 0.5rem; }
+.add-text-lead { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 1.25rem; }
+
+.steps { margin: 0; padding-left: 1.2rem; font-size: 0.9rem; color: var(--ink-soft); }
+.steps li { margin-bottom: 1rem; }
+.steps li:last-child { margin-bottom: 0; }
+.steps strong { color: var(--ink); font-weight: 600; }
+
+.command {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  padding: 0.55rem 0.75rem;
+  margin: 0.5rem 0 0.4rem;
+  overflow-x: auto;
+}
+.command code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: var(--accent);
+  white-space: pre;
+}
+
+.link-button {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+
+.result-empty { background: var(--card); align-items: flex-start; }
+.result-empty .result-detail { color: var(--ink-soft); line-height: 1.5; }

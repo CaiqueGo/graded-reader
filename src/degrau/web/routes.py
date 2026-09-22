@@ -20,6 +20,7 @@ from degrau.adapters.inbox import InboxError
 from degrau.reading import ReadingError
 from degrau.review import ReviewError
 from degrau.store import database, texts
+from degrau.store import settings as settings_store
 
 router = APIRouter()
 
@@ -48,7 +49,13 @@ def render(request: Request, name: str, **context: object) -> HTMLResponse:
 @router.get("/", response_class=HTMLResponse)
 def library_screen(request: Request, session: SessionDep) -> HTMLResponse:
     """The list of imported texts."""
-    return render(request, "index.html", texts=reading.summaries(session), tab="reading")
+    return render(
+        request,
+        "index.html",
+        texts=reading.summaries(session),
+        level=settings_store.get(session, settings_store.KEY_LEVEL),
+        tab="reading",
+    )
 
 
 @router.get("/texts/{text_id}", response_class=HTMLResponse)
@@ -218,6 +225,7 @@ def import_inbox(request: Request, session: SessionDep) -> HTMLResponse:
         "partials/import_results.html",
         results=results,
         texts=reading.summaries(session),
+        level=settings_store.get(session, settings_store.KEY_LEVEL),
     )
 
 
@@ -237,6 +245,7 @@ def import_paste(
         "partials/import_results.html",
         results=[result],
         texts=reading.summaries(session),
+        level=settings_store.get(session, settings_store.KEY_LEVEL),
     )
 
 

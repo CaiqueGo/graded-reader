@@ -67,6 +67,12 @@ O limite diário de cartões novos (padrão 10, em `setting.daily_new_cards`) co
 **primeiras aparições**, não avaliações: um cartão revisto quatro vezes hoje
 gastou uma vaga, não quatro.
 
+O app **não adapta nada sozinho** — o §3 mantém a chamada ao modelo fora da v1.
+Quem reescreve é o Claude Code, neste repositório, com `/adapt`. O botão
+*Add a text* na Biblioteca explica isso e mostra o comando; sem ele a tela parece
+quebrada, porque o botão de importar drena um `inbox/` que o leitor não sabe como
+encher.
+
 Nada disso exige terminal. Na **Biblioteca**, *Import waiting texts* faz o mesmo
 que `degrau import`, e *Paste a document* aceita o JSON colado direto no
 navegador — ele é gravado no `inbox/` antes de ser lido, então um documento
@@ -106,10 +112,21 @@ são **chutes calibrados, não verdade**: a NGSL é uma lista de frequência ger
 um mapa CEFR oficial. Depois de uns 20 textos, compare a sensação de dificuldade
 com a cobertura calculada e ajuste o arquivo — sem mexer em código.
 
-Um sinal de que isso é necessário: o texto de exemplo em `exemplo/`, escrito à mão
-tentando ficar em A1, mede 80,2% de cobertura A1. Parte disso é o texto realmente
-derrapar; parte é a banda estar severa demais com palavras como `air`, `hot` e
-`deep`.
+Isso já aconteceu uma vez, e vale como aviso. A NGSL lematiza `their`→`they`,
+`these`→`this`, `his`→`he`, `an`→`a`; o spaCy não. Treze das palavras mais comuns
+do inglês não batiam com entrada nenhuma, caíam na escala do Zipf — que só tinha
+degrau até B2 — e eram classificadas como **B2**. Todo texto com "my" ou "your"
+perdia cobertura por isso. O conserto foram quatro linhas em `data/bands.toml`,
+com os pisos tirados da mediana de Zipf de cada faixa da NGSL (A1 5,43, A2 4,96,
+B1 4,59), **sem uma linha de código**. Os testes em `tests/test_calibration.py`
+travam isso contra os dados reais.
+
+Outro aviso, de uso: nível de gramática e nível de vocabulário são coisas
+diferentes, e a cobertura só mede o segundo. O texto `exemplo/bees-adaptado.txt`
+foi escrito com gramática A1 — frases de 6 a 10 palavras, sem subordinação — e
+mede 74,7% em A1, 90,6% em B1 e 100% em B2. O assunto é que carrega o
+vocabulário: `bee` sozinho é 6,1% do texto e é B2. Um tema não vira A1 só porque
+as frases encurtaram.
 
 ## Dados
 
