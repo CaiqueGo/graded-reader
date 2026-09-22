@@ -4,19 +4,40 @@ One process, one file. There is no pool to tune: the schema is created on first
 use and, until the app has a user other than its author, ``create_all`` is
 almost the whole story.
 
-The exception is ``_add_missing_columns``, which handles exactly one case --
-a new nullable column on an existing table -- because ``create_all`` skips
-tables that already exist and the alternative is asking the reader to throw away
-their deck every time a field is added. It deliberately does nothing else. A
-renamed column, a changed type or a backfill is a real migration, and the honest
-move then is Alembic rather than growing this function until it is a worse one.
+Two functions do the little that ``create_all`` cannot, because it skips tables
+that already exist and the alternative is asking the reader to throw away their
+deck every time the schema moves.
+
+``_add_missing_columns`` adds a new column. That is all it does.
+
+``_relax_word_uniqueness`` is a real migration, and the only one. SQLite cannot
+drop a constraint with ALTER TABLE, so removing the UNIQUE that used to sit on
+``word.lemma`` means rebuilding the table and copying the rows across. It had to
+go: one card per word is right for word cards and wrong for sentences, where
+three cards can share a target. The uniqueness now lives in a partial index that
+applies to word cards only.
+
+It copies the file first, and that is not belt-and-braces. The obvious
+protection would be a transaction, and it does not work here: pysqlite issues an
+implicit COMMIT before a DDL statement, so by the time the INSERT runs, the
+rename and the CREATE are already on disk and a rollback takes nothing back.
+This was not a guess -- an early version of this function claimed to be atomic,
+failed halfway on a real deck, and left an empty table where ten cards had been.
+A copy of the file is the only thing that actually holds.
+
+It runs once. Afterwards it detects its own work and does nothing, so it is safe
+on every start. Anything more than this -- a renamed column, a changed type, a
+backfill -- is where Alembic earns its place rather than this file growing into
+a worse version of it.
 """
 
 from __future__ import annotations
 
 import re
+import shutil
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -43,10 +64,119 @@ def engine_for(path: Path | None = None) -> Engine:
     if path.parent != Path(""):
         path.parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(f"sqlite:///{path}")
+    _relax_word_uniqueness(engine, path)
     SQLModel.metadata.create_all(engine)
     _add_missing_columns(engine)
     _engines[path] = engine
     return engine
+
+
+#: The columns the old table had, in the order it had them. Copying by name
+#: rather than with SELECT * is what keeps the migration honest if the model
+#: gains a column between someone's last run and this one.
+_LEGACY_WORD_COLUMNS = (
+    "id",
+    "lemma",
+    "display",
+    "pt",
+    "example_en",
+    "example_pt",
+    "band",
+    "first_text_id",
+    "created_at",
+    "fsrs_json",
+    "due",
+    "stability",
+    "state",
+)
+
+
+def _word_lemma_is_unique(engine: Engine) -> bool:
+    """Whether the file still has the table-level UNIQUE on word.lemma."""
+    inspector = inspect(engine)
+    if "word" not in set(inspector.get_table_names()):
+        return False
+    for index in inspector.get_indexes("word"):
+        if not index.get("unique"):
+            continue
+        # The replacement index is partial and SQLAlchemy reports its filter.
+        # Checking that first also steps around a trap: for a partial index the
+        # column list comes back holding SQL expression objects, and comparing
+        # one with == builds a clause instead of answering a question -- which
+        # then raises when it is used as a boolean.
+        if index.get("dialect_options", {}).get("sqlite_where") is not None:
+            continue
+        names = [str(name) for name in (index.get("column_names") or [])]
+        if names == ["lemma"]:
+            return True
+    with engine.connect() as connection:
+        sql = connection.execute(
+            text("SELECT sql FROM sqlite_master WHERE type='table' AND name='word'")
+        ).scalar()
+    return bool(sql) and "UNIQUE" in str(sql).upper()
+
+
+def _backup_before_migrating(path: Path) -> Path | None:
+    """Copy the database beside itself, and say where it went.
+
+    The rows about to be moved are the reader's whole study history and there is
+    no other copy of them. An in-memory database has no file to copy and needs
+    none.
+    """
+    if not path.exists():
+        return None
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup = path.with_name(f"{path.name}.{stamp}.backup")
+    shutil.copy2(path, backup)
+    return backup
+
+
+def _relax_word_uniqueness(engine: Engine, path: Path | None = None) -> None:
+    """Rebuild the word table so a lemma may repeat across sentence cards.
+
+    Not atomic, and it cannot be -- see the module docstring. The file is copied
+    first instead, and a failure points at the copy rather than leaving the
+    reader to work out what happened to their deck.
+    """
+    if not _word_lemma_is_unique(engine):
+        return
+
+    backup = _backup_before_migrating(path) if path else None
+    try:
+        _rebuild_word_table(engine)
+    except Exception as error:
+        where = f" The deck as it was is at {backup}." if backup else ""
+        raise RuntimeError(
+            f"migrating the deck to allow sentence cards failed: {error}.{where}"
+        ) from error
+
+
+def _rebuild_word_table(engine: Engine) -> None:
+    columns = ", ".join(_safe_identifier(name) for name in _LEGACY_WORD_COLUMNS)
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE word RENAME TO word_legacy"))
+
+        # Renaming a table in SQLite does not rename its indexes. They follow
+        # the table under their original names and would collide with the ones
+        # the new table declares, so they go first. Dropping them loses nothing:
+        # they belong to a table this function is about to delete.
+        stale = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='index' AND tbl_name='word_legacy' AND sql IS NOT NULL"
+            )
+        ).scalars()
+        for name in list(stale):
+            connection.execute(text(f"DROP INDEX {_safe_identifier(name)}"))
+
+        SQLModel.metadata.tables["word"].create(bind=connection)
+        # kind is declared NOT NULL with a default on the Python side, not in
+        # the DDL, so a raw INSERT has to say what it is. Everything that
+        # existed before sentences did is a word card.
+        connection.execute(
+            text(f"INSERT INTO word (kind, {columns}) SELECT 'word', {columns} FROM word_legacy")
+        )
+        connection.execute(text("DROP TABLE word_legacy"))
 
 
 #: A bare SQL identifier. DDL cannot be parameterised -- a placeholder binds a

@@ -17,6 +17,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import StrEnum
 
+from sqlalchemy import Index, text
 from sqlmodel import Field, SQLModel
 
 
@@ -39,6 +40,22 @@ class SourceKind(StrEnum):
     URL = "url"
     FILE = "file"
     PASTE = "paste"
+
+
+class CardKind(StrEnum):
+    """What a card is asking you to recall.
+
+    A word card is the older shape: the word on the front, its translation and
+    an example on the back. A sentence card is how vocabulary is usually mined
+    for spaced repetition -- the sentence is the card, with the word being
+    learned marked inside it, and the back is what the sentence means.
+
+    They live in one table because the only thing the scheduler cares about is
+    the FSRS card, and both have one. What differs is what gets shown.
+    """
+
+    WORD = "word"
+    SENTENCE = "sentence"
 
 
 class CardState(StrEnum):
@@ -86,7 +103,7 @@ class Text(SQLModel, table=True):
 
 
 class Word(SQLModel, table=True):
-    """One flashcard.
+    """One flashcard, of either kind.
 
     The whole FSRS ``Card`` is kept serialised in ``fsrs_json`` so the scheduler
     stays the library's business and this project never reimplements it.
@@ -97,8 +114,22 @@ class Word(SQLModel, table=True):
 
     __tablename__ = "word"
 
+    __table_args__ = (
+        # Uniqueness applies to word cards only. Clicking a word you already
+        # saved must not make a second card of it -- but mining sentences means
+        # three cards can legitimately share a target word, and a sentence may
+        # have no single target at all. A partial index is what says both.
+        Index(
+            "ix_word_unique_lemma_per_word_card",
+            "lemma",
+            unique=True,
+            sqlite_where=text("kind = 'word'"),
+        ),
+    )
+
     id: int | None = Field(default=None, primary_key=True)
-    lemma: str = Field(unique=True, index=True)
+    kind: str = Field(default=CardKind.WORD.value, index=True)
+    lemma: str = Field(default="", index=True)
     display: str
     pt: str | None = None
     example_en: str | None = None
@@ -106,6 +137,14 @@ class Word(SQLModel, table=True):
     band: str | None = Field(default=None, index=True)
     first_text_id: int | None = Field(default=None, foreign_key="text.id")
     created_at: datetime = Field(default_factory=utcnow)
+
+    #: The sentence being learned, and what it means. Both empty on a word card.
+    #: The word highlighted inside the sentence is ``lemma``, the same field a
+    #: word card uses -- on either kind it answers "what is this card about",
+    #: and a second column saying the same thing would only be somewhere for the
+    #: two to disagree. A sentence saved without a target leaves it empty.
+    sentence: str | None = None
+    sentence_pt: str | None = None
 
     fsrs_json: str
     due: datetime = Field(index=True)
