@@ -8,6 +8,9 @@
   <span title="New cards still allowed today">{{ counts.new }} new</span>
   <span class="counter-done">{{ counts.reviewed_today }} done today</span>
   {% if undone %}<span class="counter-undone">took back {{ undone }}</span>{% endif %}
+  {% if added %}<span class="counter-added">added {{ added }}</span>{% endif %}
+  {% if already %}<span class="counter-undone">{{ already }} was already there</span>{% endif %}
+  {% if edited %}<span class="counter-added">card saved</span>{% endif %}
 </div>
 
 {% if card %}
@@ -21,7 +24,18 @@
   {% endif %}
 
   <p class="card-word">{{ card.display }}</p>
-  <p class="card-band"><span class="pill band-{{ card.band }}">{{ card.band }}</span></p>
+  <p class="card-band">
+    <span class="pill band-{{ card.band }}">{{ card.band }}</span>
+    <button class="edit-link" type="button"
+            hx-get="/words/{{ card.word_id }}/edit"
+            hx-target="#review" hx-swap="innerHTML">edit</button>
+  </p>
+
+  {% if not card.pt and not card.has_example %}
+  {# A word saved by clicking it in a text arrives with nothing but its band.
+     Saying so beats showing a blank card and letting the reader wonder. #}
+  <p class="card-thin">No translation or example yet &mdash; <em>edit</em> adds them.</p>
+  {% endif %}
 
   <div class="answer" hidden>
     {% if card.pt %}<p class="card-pt">{{ card.pt }}</p>{% endif %}
@@ -68,8 +82,15 @@
 </div>
 {% endif %}
 
-{% if counts.reviewed_today %}
-<form class="undo-form" hx-post="/review/undo" hx-target="#review" hx-swap="innerHTML">
-  <button class="undo" type="submit" data-undo>Undo last <kbd>u</kbd></button>
-</form>
-{% endif %}
+<div class="review-footer">
+  {% if counts.reviewed_today %}
+  <form hx-post="/review/undo" hx-target="#review" hx-swap="innerHTML">
+    <button class="undo" type="submit" data-undo>Undo last <kbd>u</kbd></button>
+  </form>
+  {% endif %}
+
+  <details class="add-panel">
+    <summary>Add a word directly</summary>
+    {% include "partials/add_word.html" %}
+  </details>
+</div>

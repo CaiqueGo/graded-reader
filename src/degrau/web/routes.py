@@ -15,7 +15,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
-from degrau import deck, reading, review
+from degrau import deck, library, reading, review
+from degrau.adapters.inbox import InboxError
 from degrau.reading import ReadingError
 from degrau.review import ReviewError
 from degrau.store import database, texts
@@ -45,7 +46,7 @@ def render(request: Request, name: str, **context: object) -> HTMLResponse:
 
 
 @router.get("/", response_class=HTMLResponse)
-def library(request: Request, session: SessionDep) -> HTMLResponse:
+def library_screen(request: Request, session: SessionDep) -> HTMLResponse:
     """The list of imported texts."""
     return render(request, "index.html", texts=reading.summaries(session), tab="reading")
 
@@ -203,3 +204,103 @@ def undo(request: Request, session: SessionDep) -> HTMLResponse:
     except deck.DeckError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     return render(request, "partials/review_card.html", undone=undone, **_review_context(session))
+
+
+# --- bringing texts in --------------------------------------------------------
+
+
+@router.post("/import", response_class=HTMLResponse)
+def import_inbox(request: Request, session: SessionDep) -> HTMLResponse:
+    """Drain the inbox. The button half of what `degrau import` does."""
+    results = library.import_inbox()
+    return render(
+        request,
+        "partials/import_results.html",
+        results=results,
+        texts=reading.summaries(session),
+    )
+
+
+@router.post("/import/paste", response_class=HTMLResponse)
+def import_paste(
+    request: Request,
+    session: SessionDep,
+    document: Annotated[str, Form(max_length=2_000_000)],
+) -> HTMLResponse:
+    """Import a document pasted straight into the page."""
+    try:
+        result = library.import_pasted(document)
+    except InboxError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(
+        request,
+        "partials/import_results.html",
+        results=[result],
+        texts=reading.summaries(session),
+    )
+
+
+# --- editing the deck ---------------------------------------------------------
+
+
+@router.post("/words/new", response_class=HTMLResponse)
+def add_word(
+    request: Request,
+    session: SessionDep,
+    lemma: Annotated[str, Form(min_length=1, max_length=80)],
+    pt: Annotated[str, Form(max_length=500)] = "",
+    example_en: Annotated[str, Form(max_length=1000)] = "",
+    example_pt: Annotated[str, Form(max_length=1000)] = "",
+) -> HTMLResponse:
+    """Put a word in the deck without going through a text."""
+    try:
+        _word, created = deck.save_word(
+            session,
+            lemma,
+            pt=pt or None,
+            example_en=example_en or None,
+            example_pt=example_pt or None,
+        )
+    except deck.DeckError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(
+        request,
+        "partials/review_card.html",
+        added=lemma if created else "",
+        already=lemma if not created else "",
+        **_review_context(session),
+    )
+
+
+@router.get("/words/{word_id}/edit", response_class=HTMLResponse)
+def edit_form(request: Request, word_id: int, session: SessionDep) -> HTMLResponse:
+    """The form for correcting a card, filled with what it holds now."""
+    card = review.card_by_id(session, word_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail=f"no card with id {word_id}")
+    return render(request, "partials/edit_card.html", card=card)
+
+
+@router.post("/words/{word_id}/edit", response_class=HTMLResponse)
+def save_edit(
+    request: Request,
+    session: SessionDep,
+    word_id: int,
+    lemma: Annotated[str, Form(min_length=1, max_length=80)],
+    pt: Annotated[str, Form(max_length=500)] = "",
+    example_en: Annotated[str, Form(max_length=1000)] = "",
+    example_pt: Annotated[str, Form(max_length=1000)] = "",
+) -> HTMLResponse:
+    """Apply an edit and go back to the card."""
+    try:
+        deck.update_word(
+            session,
+            word_id,
+            lemma=lemma,
+            pt=pt,
+            example_en=example_en,
+            example_pt=example_pt,
+        )
+    except deck.DeckError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(request, "partials/review_card.html", edited=True, **_review_context(session))

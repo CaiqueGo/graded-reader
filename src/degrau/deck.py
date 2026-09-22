@@ -143,6 +143,60 @@ def save_word(
     return _as_value(word), True
 
 
+def update_word(
+    session: Session,
+    word_id: int,
+    *,
+    lemma: str | None = None,
+    display: str | None = None,
+    pt: str | None = None,
+    example_en: str | None = None,
+    example_pt: str | None = None,
+) -> SavedWord:
+    """Edit a card. Unlike saving, this overwrites.
+
+    ``save_word`` only fills blanks, because a second text should not clobber the
+    sentence you have been revising against. This is the other case: the reader
+    is looking at the card and saying it is wrong, so what they type wins.
+
+    The lemma is editable on purpose. Section 13 of the MVP names lemmatisation
+    as a known weak spot -- irregular forms and phrasal verbs produce odd cards --
+    and being able to correct the base form is the mitigation it asks for.
+    Editing it never touches the schedule: the card is the same card.
+    """
+    word = words.by_id(session, word_id)
+    if word is None:
+        raise DeckError(f"no card with id {word_id}")
+
+    if lemma is not None:
+        normalised = lemma.strip().casefold()
+        if not normalised:
+            raise DeckError("a flashcard needs a lemma")
+        if normalised != word.lemma:
+            clash = words.by_lemma(session, normalised)
+            if clash is not None:
+                raise DeckError(
+                    f"{normalised!r} is already a card in your deck; "
+                    "merging two cards is not something this can do for you"
+                )
+            word.lemma = normalised
+            word.band = band_for(normalised)[0].value
+
+    if display is not None:
+        word.display = display.strip() or word.lemma
+    if pt is not None:
+        word.pt = pt.strip() or None
+    if example_en is not None:
+        word.example_en = example_en.strip() or None
+    if example_pt is not None:
+        word.example_pt = example_pt.strip() or None
+
+    session.add(word)
+    session.flush()
+    session.refresh(word)
+    return _as_value(word)
+
+
 def _fill_gaps(
     word: Word,
     *,

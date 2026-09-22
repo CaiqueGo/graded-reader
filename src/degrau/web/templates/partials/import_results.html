@@ -1,0 +1,27 @@
+{# What the import did, then the refreshed list underneath. #}
+<ul class="results">
+  {% for result in results %}
+  <li class="result result-{{ result.action.value }}">
+    <span class="result-action">{{ result.action.value }}</span>
+    <span class="result-source">{{ result.source }}</span>
+    {% if result.action.value == 'imported' %}
+    <span class="result-detail">
+      {{ result.title or '(untitled)' }} &middot; {{ result.level }} &middot;
+      {{ "%.0f"|format((result.coverage_pct or 0) * 100) }}% covered
+      {% if result.meets_threshold is false %}
+      <span class="flag-out">below threshold</span>
+      {% endif %}
+    </span>
+    {% elif result.reason %}
+    <span class="result-detail">{{ result.reason }}</span>
+    {% endif %}
+  </li>
+  {% endfor %}
+  {% if not results %}
+  <li class="result result-empty">
+    <span class="result-detail">Nothing was waiting in the inbox.</span>
+  </li>
+  {% endif %}
+</ul>
+
+{% include "partials/library_list.html" %}

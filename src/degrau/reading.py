@@ -17,7 +17,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 from sqlmodel import Session
 
-from degrau.lexicon import Token, band_for, tokenize
+from degrau.lexicon import LexiconError, Token, band_for, load_bands, tokenize
+from degrau.lexicon.models import parse_level
 from degrau.store import texts, words
 
 #: A blank line separates paragraphs. Section 7 of the MVP writes an adapted
@@ -91,8 +92,20 @@ class TextSummary(BaseModel):
     title: str
     level: str
     coverage_pct: float | None = None
+    threshold: float | None = None
     out_of_level_count: int = 0
     created_at: str = ""
+
+    @property
+    def meets_threshold(self) -> bool:
+        """Whether the text is at the level it claims to be.
+
+        Unmeasured counts as fine. Flagging a text whose coverage was never
+        computed would be an accusation the app cannot support.
+        """
+        if self.coverage_pct is None or self.threshold is None:
+            return True
+        return self.coverage_pct >= self.threshold
 
 
 class ReadingView(BaseModel):
@@ -170,6 +183,14 @@ def _lemma_of(term: str) -> str:
     return found[0] if found else cleaned
 
 
+def _threshold_for(level: str) -> float | None:
+    """The coverage a text at this level has to clear, or None if unknown."""
+    try:
+        return load_bands().threshold_for(parse_level(level))
+    except (LexiconError, ValueError):
+        return None
+
+
 def summaries(session: Session, limit: int = 50) -> list[TextSummary]:
     """The library list, most recent first."""
     return [
@@ -178,6 +199,7 @@ def summaries(session: Session, limit: int = 50) -> list[TextSummary]:
             title=row.title or "(untitled)",
             level=row.level,
             coverage_pct=row.coverage_pct,
+            threshold=_threshold_for(row.level),
             out_of_level_count=len(_loads(row.out_of_level)),
             created_at=row.created_at.astimezone().strftime("%Y-%m-%d %H:%M"),
         )

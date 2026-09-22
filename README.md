@@ -67,6 +67,20 @@ O limite diário de cartões novos (padrão 10, em `setting.daily_new_cards`) co
 **primeiras aparições**, não avaliações: um cartão revisto quatro vezes hoje
 gastou uma vaga, não quatro.
 
+Nada disso exige terminal. Na **Biblioteca**, *Import waiting texts* faz o mesmo
+que `degrau import`, e *Paste a document* aceita o JSON colado direto no
+navegador — ele é gravado no `inbox/` antes de ser lido, então um documento
+inválido acaba em `inbox/rejected/` com o motivo ao lado, em vez de sumir quando
+a página troca. Texto abaixo do limiar entra assim mesmo, marcado **out of
+level**: o §6 manda mostrar o número e deixar você decidir.
+
+No **Review** dá para adicionar palavra direto ao baralho, sem passar por texto
+nenhum, e corrigir o cartão na hora em que ele aparece — inclusive **o lema**. O
+§13 aponta a lematização como o ponto fraco conhecido (`give up` ≠ `give`), e
+poder consertar a forma base é a mitigação que ele pede. Corrigir o lema não
+mexe no agendamento: é o mesmo cartão. Renomear para um lema que já existe é
+recusado, porque fundir dois históricos é decisão sua, não do app.
+
 A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. As
 palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
 `machine` destaca `machines`. O texto original fica a um clique, na aba ao lado.

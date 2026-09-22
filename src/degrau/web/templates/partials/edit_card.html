@@ -1,0 +1,33 @@
+{# Correcting a card. Section 13 of the MVP asks for the lemma to be editable:
+   irregular forms and phrasal verbs produce odd cards, and this is the fix it
+   names. Editing never touches the schedule -- it is the same card. #}
+<article class="card card-editing">
+  <form hx-post="/words/{{ card.word_id }}/edit" hx-target="#review" hx-swap="innerHTML">
+    <label for="edit-lemma">Base form</label>
+    <input id="edit-lemma" name="lemma" value="{{ card.lemma }}" maxlength="80" required
+           autocomplete="off" spellcheck="false">
+    <p class="field-hint">What the deck is keyed by. Fix it when the lemmatiser
+      got it wrong &mdash; <em>give up</em> is one card, not <em>give</em>.</p>
+
+    <label for="edit-pt">Translation</label>
+    <input id="edit-pt" name="pt" value="{{ card.pt }}" maxlength="500" autocomplete="off">
+
+    <label for="edit-en">Example sentence</label>
+    <input id="edit-en" name="example_en" value="{{ card.example_en }}" maxlength="1000"
+           autocomplete="off">
+    <p class="field-hint">This is what appears with the word blanked out on the
+      front of the card.</p>
+
+    <label for="edit-pt-ex">Example, translated</label>
+    <input id="edit-pt-ex" name="example_pt" value="{{ card.example_pt }}" maxlength="1000"
+           autocomplete="off">
+
+    <div class="edit-actions">
+      <button class="primary" type="submit">Save card</button>
+      <button class="secondary" type="button"
+              hx-get="/review" hx-target="#review" hx-select="#review > *" hx-swap="innerHTML">
+        Cancel
+      </button>
+    </div>
+  </form>
+</article>

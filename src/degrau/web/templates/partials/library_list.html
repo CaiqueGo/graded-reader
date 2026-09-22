@@ -1,0 +1,33 @@
+{% if texts %}
+<ul class="library">
+  {% for item in texts %}
+  <li class="library-item">
+    <a class="library-link" href="/texts/{{ item.id }}">
+      <span class="library-level band-{{ item.level }}">{{ item.level }}</span>
+      <span class="library-title">{{ item.title }}</span>
+      <span class="library-meta">
+        {% if item.coverage_pct is not none %}
+          {{ "%.0f"|format(item.coverage_pct * 100) }}% within {{ item.level }}
+          &middot; {{ item.out_of_level_count }} above
+          {% if not item.meets_threshold %}
+          {# Section 6: show the number, flag it, and let the reader decide.
+             Importing is never blocked -- a text at 93% with four unavoidable
+             technical words beats a mutilated one at 96%. #}
+          <span class="flag-out">out of level &mdash; consider running /adapt again</span>
+          {% endif %}
+        {% else %}
+          not measured
+        {% endif %}
+        &middot; {{ item.created_at }}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty">
+  <p>Nothing imported yet.</p>
+  <p class="hint">Run <code>/adapt A1 &lt;file&gt;</code> in Claude Code, then press
+    <em>Import waiting texts</em> above &mdash; or paste the document straight in.</p>
+</div>
+{% endif %}

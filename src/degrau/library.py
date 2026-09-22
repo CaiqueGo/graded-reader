@@ -178,6 +178,24 @@ def import_file(path: Path, *, db: Path | None = None) -> ImportResult:
     return result
 
 
+def import_pasted(raw: str, *, db: Path | None = None) -> ImportResult:
+    """Import a document pasted into the browser.
+
+    It is written into the inbox first and then imported by the ordinary path.
+    That is deliberate: pasted text gets the same treatment as a file, so a
+    document that fails validation ends up in ``rejected/`` with its note beside
+    it instead of vanishing when the page navigates away. What the reader pasted
+    cost a model call, exactly like what /adapt wrote.
+    """
+    if not raw.strip():
+        raise InboxError("nothing pasted")
+
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    destination = _unique_destination(config.inbox_dir(), f"pasted-{stamp}.json")
+    destination.write_text(raw, encoding="utf-8")
+    return import_file(destination, db=db)
+
+
 def import_inbox(*, db: Path | None = None) -> list[ImportResult]:
     """Import everything waiting in the inbox, oldest name first."""
     return [import_file(path, db=db) for path in pending(config.inbox_dir())]

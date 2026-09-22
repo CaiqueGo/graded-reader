@@ -277,6 +277,12 @@ def next_card(session: Session, *, now: datetime | None = None) -> ReviewCard | 
     return None if word is None else to_card(word, now=now)
 
 
+def card_by_id(session: Session, word_id: int, *, now: datetime | None = None) -> ReviewCard | None:
+    """One specific card, for the edit form to fill itself from."""
+    word = words.by_id(session, word_id)
+    return None if word is None else to_card(word, now=now)
+
+
 def grade(
     session: Session,
     word_id: int,

@@ -1,0 +1,10 @@
+{# A card without a text behind it. Not every word worth learning shows up in
+   something you read. #}
+<form class="add-word" hx-post="/words/new" hx-target="#review" hx-swap="innerHTML"
+      hx-on::after-request="if (event.detail.successful) this.reset()">
+  <input name="lemma" placeholder="word" maxlength="80" required
+         autocomplete="off" spellcheck="false">
+  <input name="pt" placeholder="translation" maxlength="500" autocomplete="off">
+  <input name="example_en" placeholder="example sentence" maxlength="1000" autocomplete="off">
+  <button class="secondary" type="submit">Add to deck</button>
+</form>

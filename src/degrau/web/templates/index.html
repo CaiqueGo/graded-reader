@@ -2,32 +2,34 @@
 {% block title %}Degrau - Library{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Library</h1>
-
-{% if texts %}
-<ul class="library">
-  {% for item in texts %}
-  <li class="library-item">
-    <a class="library-link" href="/texts/{{ item.id }}">
-      <span class="library-level band-{{ item.level }}">{{ item.level }}</span>
-      <span class="library-title">{{ item.title }}</span>
-      <span class="library-meta">
-        {% if item.coverage_pct is not none %}
-          {{ "%.0f"|format(item.coverage_pct * 100) }}% within {{ item.level }}
-          &middot; {{ item.out_of_level_count }} above
-        {% else %}
-          not measured
-        {% endif %}
-        &middot; {{ item.created_at }}
-      </span>
-    </a>
-  </li>
-  {% endfor %}
-</ul>
-{% else %}
-<div class="empty">
-  <p>Nothing imported yet.</p>
-  <p class="hint">Run <code>/adapt A1 &lt;file&gt;</code> in Claude Code, then <code>degrau import</code>.</p>
+<div class="library-head">
+  <h1 class="page-title">Library</h1>
+  <div class="library-actions">
+    <form hx-post="/import" hx-target="#library-body" hx-swap="innerHTML">
+      <button class="primary" type="submit">Import waiting texts</button>
+    </form>
+    <button class="secondary" type="button"
+            onclick="const box = document.querySelector('#paste'); box.hidden = !box.hidden;
+                     if (!box.hidden) box.querySelector('textarea').focus();">
+      Paste a document
+    </button>
+  </div>
 </div>
-{% endif %}
+
+<section id="paste" class="paste" hidden>
+  <form hx-post="/import/paste" hx-target="#library-body" hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful) this.reset()">
+    <label for="document">
+      The JSON that <code>/adapt</code> produces. It is saved to the inbox before
+      it is read, so a document that fails validation is never lost.
+    </label>
+    <textarea id="document" name="document" rows="10" spellcheck="false"
+              placeholder='{"schema": 1, "level": "A1", "adapted_text": "..."}'></textarea>
+    <button class="primary" type="submit">Import this</button>
+  </form>
+</section>
+
+<div id="library-body">
+  {% include "partials/library_list.html" %}
+</div>
 {% endblock %}
