@@ -31,6 +31,9 @@ COLUMN_GAP = 2.0
 CAP_RADIUS = 4.0
 MARKER_RADIUS = 4.5
 
+#: How tall a day with no reviews is drawn. Tall enough to see the row of days.
+ZERO_STUB = 3.0
+
 PLOT_WIDTH = WIDTH - PAD_LEFT - PAD_RIGHT
 PLOT_HEIGHT = HEIGHT - PAD_TOP - PAD_BOTTOM
 
@@ -156,9 +159,10 @@ def history_chart(dashboard: Dashboard) -> ColumnChart:
         hit_x = PAD_LEFT + index * slot
         centre = hit_x + slot / 2
         height = (entry.count / top) * PLOT_HEIGHT if top else 0.0
-        # A day with nothing still gets a sliver, so the axis reads as a row of
-        # days rather than as a gap where the chart stopped.
-        drawn = max(height, 1.5 if entry.count == 0 else height)
+        # A day with nothing still gets a stub. Thirty invisible days and one
+        # bar reads as a broken chart; thirty visible stubs and one bar reads as
+        # a month in which you studied once, which is the truth.
+        drawn = max(height, ZERO_STUB) if entry.count == 0 else height
         columns.append(
             Column(
                 path=_column_path(

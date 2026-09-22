@@ -71,6 +71,17 @@ class Rung(BaseModel):
         return (self.mastered / self.total) if self.measurable and self.total else 0.0
 
     @property
+    def deck_share(self) -> float:
+        """How much of the band is in the deck at all, learned or not.
+
+        Drawn behind the learned fill so the rung says something from the first
+        week. Without it every bar is empty until a card survives three weeks,
+        and an honest zero that looks identical to a broken chart is not doing
+        the reader any favours.
+        """
+        return (self.in_deck / self.total) if self.measurable and self.total else 0.0
+
+    @property
     def percent(self) -> str:
         if not self.measurable:
             return "-"

@@ -30,13 +30,20 @@
     band holds. This is a different question from how many cards you own.
   </p>
 
+  <p class="legend">
+    <span class="key key-learned"></span> learned
+    <span class="key key-deck"></span> in the deck
+  </p>
+
   <div class="ladder">
     {% for rung in panel.ladder %}
     <div class="rung{% if not rung.measurable %} rung-open{% endif %}">
       <span class="pill band-{{ rung.level }}">{{ rung.level }}</span>
       <div class="meter" role="img"
-           aria-label="{{ rung.level }}: {{ rung.mastered }} learned{% if rung.measurable %} of {{ rung.total }}{% endif %}">
+           aria-label="{{ rung.level }}: {{ rung.mastered }} learned,
+                       {{ rung.in_deck }} in the deck{% if rung.measurable %} of {{ rung.total }}{% endif %}">
         {% if rung.measurable %}
+        <div class="meter-deck" style="width: {{ (rung.deck_share * 100)|round(2) }}%"></div>
         <div class="meter-fill" style="width: {{ (rung.share * 100)|round(2) }}%"></div>
         {% endif %}
       </div>

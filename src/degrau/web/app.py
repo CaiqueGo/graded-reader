@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from degrau import __version__
+from degrau.web.assets import static_url
 from degrau.web.routes import router
 
 HERE = Path(__file__).parent
@@ -29,6 +30,10 @@ STATIC_DIR = HERE / "static"
 #: It matters more here than in most apps: the adapted text and its glossary
 #: come from a language model, and are rendered back as markup.
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+#: Templates call this instead of writing /static/... by hand, so a changed file
+#: reaches the browser without anyone having to clear a cache. See web.assets.
+templates.env.globals["static_url"] = lambda name: static_url(name, root=STATIC_DIR)
 
 
 def create_app() -> FastAPI:

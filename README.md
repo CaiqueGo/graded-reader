@@ -152,6 +152,11 @@ minutos, e contá-los como retenção infla o número sem dizer nada. Um painel
 confiantemente errado é pior que painel nenhum, porque nada na tela avisa para
 duvidar.
 
+Os arquivos estáticos são servidos com a impressão digital do conteúdo na URL
+(`app.css?v=fb6014d5`). Sem isso, o navegador guarda a folha de estilo antiga e
+uma mudança de CSS chega como tela quebrada — que foi exatamente o que
+aconteceu, e é um bug que se parece com CSS errado sendo cache velho.
+
 Os gráficos são SVG inline, sem biblioteca: barras de 30 dias para trás, curva de
 retenção para 30 dias à frente. O eixo da retenção vai de 0 a 100% inteiros —
 cortá-lo transformaria um declínio suave em precipício. Cada marca tem um
