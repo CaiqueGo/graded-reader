@@ -24,11 +24,19 @@ from pydantic import BaseModel, ConfigDict
 
 from degrau import config
 from degrau.adapters.base import AdaptedText
+from degrau.adapters.claude_cli import ClaudeCliAdapter
 from degrau.adapters.inbox import InboxError, pending, read
 from degrau.lexicon import CoverageReport, LexiconError, coverage
 from degrau.lexicon.bands import band_for, load_bands, load_ngsl
 from degrau.lexicon.models import LEVELS, Band, level_index, parse_level
-from degrau.profile import LevelRules, Profile, build, load_levels, next_band
+from degrau.profile import (
+    DEFAULT_NEW_WORDS,
+    LevelRules,
+    Profile,
+    build,
+    load_levels,
+    next_band,
+)
 from degrau.store import database, texts, words
 from degrau.store import settings as settings_store
 from degrau.store.models import Text
@@ -176,6 +184,38 @@ def import_file(path: Path, *, db: Path | None = None) -> ImportResult:
     # Committed. Only now does the file move -- see the module docstring.
     shutil.move(str(path), str(_unique_destination(config.processed_dir(), path.name)))
     return result
+
+
+def adapt_and_import(
+    source_text: str,
+    level: Band | str,
+    *,
+    adapter: ClaudeCliAdapter | None = None,
+    kind: str = "paste",
+    value: str = "",
+    title_hint: str = "",
+    new_words: int = DEFAULT_NEW_WORDS,
+    db: Path | None = None,
+) -> ImportResult:
+    """Adapt a text with a model and put the result in the library.
+
+    The same path as a file from the inbox: the adapted document is written
+    into ``inbox/`` and then imported by ``import_file``. Nothing is special
+    about having come from a model -- it is validated, measured, hashed against
+    what is already stored and filed away identically. A model that returns
+    something malformed is rejected exactly like a hand-written file, with the
+    reason in a note beside it.
+    """
+    target = parse_level(level)
+    built = build_profile(target, new_words=new_words, db=db)
+    engine = adapter or ClaudeCliAdapter()
+
+    adapted = engine.adapt_source(source_text, built, kind=kind, value=value, title_hint=title_hint)
+
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    destination = _unique_destination(config.inbox_dir(), f"adapted-{stamp}.json")
+    destination.write_text(adapted.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
+    return import_file(destination, db=db)
 
 
 def import_pasted(raw: str, *, db: Path | None = None) -> ImportResult:

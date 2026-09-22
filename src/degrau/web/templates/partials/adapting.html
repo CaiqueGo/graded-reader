@@ -1,0 +1,18 @@
+{# The page polls this while the model works. The interval is two seconds: a run
+   takes twenty to sixty, so anything faster is noise, and the reader gets an
+   elapsed counter so a slow run reads as slow rather than as broken. #}
+<div class="adapting"
+     hx-get="/adapt/{{ job.id }}"
+     hx-trigger="load delay:2s"
+     hx-target="#library-body"
+     hx-swap="innerHTML">
+  <p class="adapting-title">
+    <span class="spinner" aria-hidden="true"></span>
+    Adapting <strong>{{ job.label }}</strong>{% if level %} to {{ level }}{% endif %}
+  </p>
+  <p class="hint">
+    {{ "%.0f"|format(job.seconds) }}s &mdash; runs usually take 20 to 60 seconds.
+    {% if source %}The source is {{ source.words }} words.{% endif %}
+    This uses your Claude plan, the same as running the command yourself.
+  </p>
+</div>

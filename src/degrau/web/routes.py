@@ -15,8 +15,9 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
-from degrau import deck, library, reading, review
+from degrau import deck, jobs, library, reading, review, sources
 from degrau.adapters.inbox import InboxError
+from degrau.library import ImportResult
 from degrau.reading import ReadingError
 from degrau.review import ReviewError
 from degrau.store import database, texts
@@ -313,3 +314,66 @@ def save_edit(
     except deck.DeckError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     return render(request, "partials/review_card.html", edited=True, **_review_context(session))
+
+
+# --- adapting a source with the model ----------------------------------------
+
+#: One adaptation at a time, for one reader. See degrau.jobs.
+adaptations: jobs.Runner[ImportResult] = jobs.Runner()
+
+
+@router.post("/adapt", response_class=HTMLResponse)
+def start_adaptation(
+    request: Request,
+    session: SessionDep,
+    level: Annotated[str, Form(min_length=2, max_length=2)],
+    url: Annotated[str, Form(max_length=2000)] = "",
+    text: Annotated[str, Form(max_length=400_000)] = "",
+) -> HTMLResponse:
+    """Fetch or take a source, then hand it to the model in the background.
+
+    The page is fetched here, by this process, and reduced to plain text before
+    the model ever sees it. The model that adapts it has no tools, so an article
+    cannot talk its way into changing anything -- see degrau.sources.
+    """
+    try:
+        source = sources.from_url(url) if url.strip() else sources.from_text(text)
+    except sources.SourceError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    def work() -> ImportResult:
+        return library.adapt_and_import(
+            source.text,
+            level,
+            kind=source.kind,
+            value=source.value,
+            title_hint=source.title,
+        )
+
+    try:
+        job = adaptations.submit(source.title or source.value or "pasted text", work)
+    except jobs.JobBusy as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    return render(request, "partials/adapting.html", job=job, source=source, level=level)
+
+
+@router.get("/adapt/{job_id}", response_class=HTMLResponse)
+def adaptation_status(request: Request, job_id: str, session: SessionDep) -> HTMLResponse:
+    """What the background adaptation is doing. Polled by the page."""
+    job = adaptations.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="no such adaptation")
+
+    if job.running:
+        return render(request, "partials/adapting.html", job=job)
+
+    adaptations.forget_finished()
+    return render(
+        request,
+        "partials/import_results.html",
+        results=[job.result] if job.result is not None else [],
+        failure=job.error,
+        texts=reading.summaries(session),
+        level=settings_store.get(session, settings_store.KEY_LEVEL),
+    )

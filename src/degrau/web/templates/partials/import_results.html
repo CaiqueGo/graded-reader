@@ -1,4 +1,12 @@
 {# What the import did, then the refreshed list underneath. #}
+{% if failure %}
+<div class="result result-rejected">
+  <span class="result-action">failed</span>
+  <span class="result-detail">{{ failure }}</span>
+</div>
+{% endif %}
+
+{# What the import did, then the refreshed list underneath. #}
 <ul class="results">
   {% for result in results %}
   <li class="result result-{{ result.action.value }}">

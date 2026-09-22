@@ -4,8 +4,11 @@ Leitor de inglês graduado por nível, com flashcards próprios e painel de evol
 
 O Degrau pega **qualquer** texto e o reescreve no nível certo, extrai o vocabulário
 que vale a pena aprender, e acompanha o que foi realmente aprendido ao longo do
-tempo. O app não chama LLM nenhum: ele gera o prompt, recebe o JSON e faz todo o
-trabalho determinístico — validação, lematização, agendamento, estatística.
+tempo.
+
+Todo o trabalho determinístico é do app — validação, lematização, medição de
+cobertura, agendamento, estatística. A reescrita é do Claude Code, pelo binário
+que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
 
 ## Por onde começar
 
@@ -22,24 +25,26 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 | M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
 | M4 | Painel | a fazer |
 | M5 | Exportação para o Anki | a fazer |
+| — | Adaptar pela web (antecipa o `ApiAdapter` do §14) | pronto |
 
 ## Como rodar
 
 ```
 uv venv --python 3.11
-uv pip install -e ".[lexicon,db,srs,web,dev]"
+uv pip install -e ".[lexicon,db,srs,web,adapt,dev]"
 python -m spacy download en_core_web_sm
 ```
 
-O laço normal é o comando de barra, dentro do Claude Code neste repositório:
+O caminho normal é `degrau serve` e o botão **Add a text** — cola um endereço ou
+o artigo, escolhe o nível, e pronto. O mesmo laço pelo terminal, quando quiser
+controle:
 
 ```
 /adapt A1 materia.txt
 ```
 
 Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
-`degrau import` e reporta a cobertura. Os comandos por trás dele, se quiser rodar
-à mão:
+`degrau import` e reporta a cobertura. Os comandos por trás dos dois:
 
 | Comando | O que faz |
 |---|---|
@@ -67,11 +72,39 @@ O limite diário de cartões novos (padrão 10, em `setting.daily_new_cards`) co
 **primeiras aparições**, não avaliações: um cartão revisto quatro vezes hoje
 gastou uma vaga, não quatro.
 
-O app **não adapta nada sozinho** — o §3 mantém a chamada ao modelo fora da v1.
-Quem reescreve é o Claude Code, neste repositório, com `/adapt`. O botão
-*Add a text* na Biblioteca explica isso e mostra o comando; sem ele a tela parece
-quebrada, porque o botão de importar drena um `inbox/` que o leitor não sabe como
-encher.
+Em *Add a text*, você cola um endereço ou o texto e o app adapta sozinho. O §3 do
+MVP punha isso na v2, e o §13 diz que a fricção do modo manual é o sinal de que a
+v2 vale a pena — o sinal veio cedo. É o `Adapter` do §14 com uma segunda
+implementação, o `ClaudeCliAdapter`, ao lado do `InboxAdapter`.
+
+**Não é a API paga.** O adaptador chama o binário `claude` que já está instalado
+e logado na sua máquina, então gasta o mesmo plano que digitar o comando no
+terminal. O `total_cost_usd` que o CLI reporta é o equivalente em API, não uma
+cobrança.
+
+Três decisões que parecem detalhe e não são:
+
+- **O processo filho roda sem ferramenta nenhuma** (`--tools ""`). O artigo que
+  você manda adaptar é texto não confiável; um agente com `Write` e `Bash` lendo
+  uma página hostil é um risco diferente de um modelo sem mãos. De quebra,
+  consome ~3× menos da sua janela, e contorna um defeito real: rodar o `/adapt`
+  por `claude -p` **com** ferramentas falha de forma reproduzível no CLI 2.0.76
+  (`API Error 400: tool_use ids must be unique`).
+- **O prompt vai por stdin.** Como argumento ele é truncado em silêncio no limite
+  de linha de comando do Windows — o processo sai com código 0 e não imprime
+  nada.
+- **A resposta é desembrulhada antes de virar JSON.** O modelo cerca o JSON em
+  ```` ```json ```` por mais que se peça o contrário. O `--json-schema` do CLI
+  seria a solução certa e hoje devolve 400.
+
+O `/adapt` continua existindo como caminho manual, e é o mesmo bloco de perfil nos
+dois — se divergirem, as adaptações ficariam sutilmente piores por uma das portas
+e nada avisaria.
+
+**Limite conhecido:** o app busca qualquer endereço http(s) que você digitar,
+inclusive de rede local. Como só você digita, e o app só escuta em localhost,
+isso é aceitável aqui — mas é uma porta que não existe se um dia houver um
+segundo usuário.
 
 Nada disso exige terminal. Na **Biblioteca**, *Import waiting texts* faz o mesmo
 que `degrau import`, e *Paste a document* aceita o JSON colado direto no

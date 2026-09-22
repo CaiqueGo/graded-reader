@@ -20,13 +20,40 @@
    Without it the import button looks broken: it drains an inbox the reader has
    no idea how to fill. #}
 <section id="add-text" class="add-text" hidden>
-  <h2 class="section-title">Where texts come from</h2>
+  <h2 class="section-title">Add a text</h2>
   <p class="add-text-lead">
-    Degrau does not rewrite anything on its own. Claude Code does the adapting,
-    in this repository, and leaves the result in <code>inbox/</code> for the app
-    to check and store.
+    Give it an address or paste an article, and Claude Code adapts it to your
+    level. It uses the login you already have &mdash; the same plan as running
+    the command in the terminal, not a separate bill.
   </p>
 
+  <form class="adapt-form"
+        hx-post="/adapt" hx-target="#library-body" hx-swap="innerHTML"
+        hx-disabled-elt="find button">
+    <div class="adapt-row">
+      <label for="adapt-level">Level</label>
+      <select id="adapt-level" name="level">
+        {% for band in ["A1", "A2", "B1", "B2", "C1", "C2"] %}
+        <option value="{{ band }}" {% if band == level %}selected{% endif %}>{{ band }}</option>
+        {% endfor %}
+      </select>
+      <input name="url" type="url" placeholder="https://... an article to adapt"
+             autocomplete="off" spellcheck="false">
+      <button class="primary" type="submit">Adapt</button>
+    </div>
+    <details class="adapt-paste">
+      <summary>or paste the article text instead</summary>
+      <textarea name="text" rows="8" spellcheck="false"
+                placeholder="Paste the article here. Leave the address field empty to use this."></textarea>
+    </details>
+    <p class="field-hint">
+      Degrau fetches the page itself and hands the model plain text, with no
+      tools &mdash; the article cannot reach your files. Each run spends your
+      Claude plan, the same as typing the command yourself.
+    </p>
+  </form>
+
+  <h3 class="sub-title">Or do it by hand</h3>
   <ol class="steps">
     <li>
       <strong>Run the command in Claude Code</strong>, pointing it at a file or a URL:
