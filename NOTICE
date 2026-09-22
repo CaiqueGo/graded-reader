@@ -1,0 +1,50 @@
+Degrau — a graded English reader
+Copyright 2026 CaiqueGo (https://github.com/CaiqueGo)
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+================================================================================
+Third-party material redistributed inside this repository
+================================================================================
+
+The LICENSE file covers this project's own code. The two files below are not
+this project's work; they are included here as they were published, under their
+own terms.
+
+--------------------------------------------------------------------------------
+1. data/ngsl.csv — the New General Service List
+--------------------------------------------------------------------------------
+
+    New General Service List by Browne, C., Culligan, B., and Phillips, J. is
+    licensed under a Creative Commons Attribution-ShareAlike 4.0 International
+    License. Permissions beyond the scope of this license may be available at
+    http://www.charlie-browne.com
+
+Source:  https://www.newgeneralservicelist.com/new-general-service-list
+License: CC BY-SA 4.0 — https://creativecommons.org/licenses/by-sa/4.0/
+
+The file is redistributed with its contents unchanged; only the filename
+differs, from NGSL_12_stats.csv to ngsl.csv. It is the 2,809-word list with its
+SFI frequency ranks, which is what this project turns into CEFR bands.
+
+Note that CC BY-SA 4.0 is a share-alike licence and is not the Apache licence
+that covers the code. Anyone redistributing this word list, or a work adapted
+from it, is bound by those terms rather than by LICENSE.
+
+--------------------------------------------------------------------------------
+2. src/degrau/web/static/htmx.min.js — htmx 2.0.4
+--------------------------------------------------------------------------------
+
+Source:  https://htmx.org/
+License: BSD Zero Clause License (0BSD)
+
+0BSD asks for no attribution at all, so this entry is not required. It is here
+so that nobody reading the repository mistakes a vendored library for code
+written for this project. The file is bundled rather than loaded from a CDN
+because Degrau is a local application and should work with no network.
+
+================================================================================
+
+Everything else the project depends on — spaCy, wordfreq, FSRS, FastAPI and the
+rest — is installed from the package index at setup time and is not contained in
+this repository, so it is not listed here. Their licences are their own.

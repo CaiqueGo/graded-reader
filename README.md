@@ -224,3 +224,11 @@ O banco é um arquivo SQLite (`degrau.db`, sobrescrevível por `DEGRAU_DB`) e o
 `inbox/` por `DEGRAU_INBOX_DIR`. Nenhum dos dois vai para o git.
 
 Frequência fora da NGSL vem do [wordfreq](https://pypi.org/project/wordfreq/).
+
+## Licenças
+
+O código está sob Apache 2.0 ([`LICENSE`](LICENSE)). Dois arquivos dentro do
+repositório **não** são deste projeto e têm termos próprios — a lista NGSL em
+`data/` (CC BY-SA 4.0, que é *share-alike* e não é a licença do código) e o htmx
+em `src/degrau/web/static/` (0BSD). Os dois estão detalhados no
+[`NOTICE`](NOTICE).
