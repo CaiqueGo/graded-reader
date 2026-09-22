@@ -380,6 +380,9 @@ kbd {
 }
 .primary { background: var(--accent); color: #fff; }
 .secondary { background: var(--card); color: var(--accent); }
+/* The export is a link, not a button, so the browser downloads instead of
+   posting -- it still has to look like the buttons beside it. */
+a.secondary { text-decoration: none; display: inline-block; line-height: 1.4; }
 
 .paste {
   background: var(--card);

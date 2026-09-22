@@ -233,3 +233,25 @@ def test_a_directly_added_word_joins_the_queue() -> None:
     with database.session() as active:
         nxt = review.next_word(active, now=moment)
         assert nxt is not None and nxt.lemma == "rock"
+
+
+def test_correcting_the_lemma_moves_the_shown_form_with_it() -> None:
+    """Otherwise the card reads "give" while the deck knows it as "give up"."""
+    word_id = saved("give")
+    with database.session() as active:
+        edited = deck.update_word(active, word_id, lemma="give up")
+
+    assert edited.lemma == "give up"
+    assert edited.display == "give up", "the front is what gets reviewed and exported"
+
+
+def test_a_display_the_reader_chose_survives_a_lemma_correction() -> None:
+    """Only a display that was a copy of the old lemma follows it."""
+    word_id = saved("give")
+    with database.session() as active:
+        deck.update_word(active, word_id, display="to give")
+    with database.session() as active:
+        edited = deck.update_word(active, word_id, lemma="give up")
+
+    assert edited.lemma == "give up"
+    assert edited.display == "to give"

@@ -15,11 +15,12 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from degrau import __version__, config, library
+from degrau import __version__, anki, config, library
+from degrau import deck as deck_module
 from degrau.lexicon import Band, CoverageReport, LexiconError, coverage
 from degrau.library import ImportAction, ImportResult
 from degrau.profile import DEFAULT_NEW_WORDS, ProfileError, render
-from degrau.store import database, texts
+from degrau.store import database, texts, words
 
 app = typer.Typer(
     help="degrau -- a graded English reader with its own flashcards.",
@@ -288,6 +289,66 @@ def serve(
 
     console.print(f"reading at [cyan]http://{host}:{port}[/cyan]  (ctrl-c to stop)")
     uvicorn.run("degrau.web.app:app", host=host, port=port, reload=reload, log_level="warning")
+
+
+@app.command()
+def export(
+    out: Annotated[
+        Path,
+        typer.Argument(help="Where to write the CSV. Use '-' for standard output."),
+    ] = Path("degrau-anki.csv"),
+    level: Annotated[
+        Band | None, typer.Option("--level", "-l", help="Only cards in this band.")
+    ] = None,
+    learned: Annotated[
+        bool, typer.Option("--learned", help="Only cards that have survived.")
+    ] = False,
+    deck_name: Annotated[
+        str, typer.Option("--deck", help="Deck to preselect in Anki's import dialog.")
+    ] = "Degrau",
+    notetype: Annotated[
+        str,
+        typer.Option(
+            "--notetype",
+            help="Note type to preselect. Only works if that exact name exists; "
+            "the default one is called something different in each language.",
+        ),
+    ] = "",
+) -> None:
+    """Write the deck as a CSV for Anki.
+
+    Three columns -- the word, the translation with its example, and tags --
+    under the headers Anki needs to read it without anything being adjusted in
+    the import dialog. Re-exporting updates the same notes rather than doubling
+    the deck, because Anki treats the first column as the identity of a note.
+    """
+    with database.session() as active:
+        rows = words.for_export(active, band=level.value if level else None, learned_only=learned)
+        values = deck_module.as_values(rows)
+
+    notes = anki.build_notes(values)
+    if not notes:
+        error_console.print("[yellow]nothing to export[/yellow] -- the deck is empty.")
+        raise typer.Exit(code=1)
+
+    document = anki.render(notes, deck=deck_name, notetype=notetype)
+    if str(out) == "-":
+        sys.stdout.write(document)
+    else:
+        # newline empty so the bytes are exactly what was rendered. Without
+        # it Windows rewrites every line feed as a carriage return plus one,
+        # which quietly undoes the terminator the CSV writer was told to use
+        # and would rewrite a line break inside a quoted field as well.
+        with out.open("w", encoding="utf-8", newline="") as handle:
+            handle.write(document)
+        console.print(f"[green]wrote[/green] {len(notes)} note(s) to [cyan]{out}[/cyan]")
+
+    blank = sum(1 for note in notes if not note.usable)
+    if blank:
+        console.print(
+            f"  [yellow]{blank}[/yellow] of them have nothing on the back yet -- "
+            "words saved by clicking in a text carry only a band until you fill them in."
+        )
 
 
 if __name__ == "__main__":

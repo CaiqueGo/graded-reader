@@ -2,7 +2,14 @@
 {% block title %}Dashboard - Degrau{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Dashboard</h1>
+<div class="library-head">
+  <h1 class="page-title">Dashboard</h1>
+  {% if not panel.empty %}
+  <div class="library-actions">
+    <a class="secondary" href="/export.csv" download>Export for Anki</a>
+  </div>
+  {% endif %}
+</div>
 
 {% if panel.empty %}
 <div class="empty">

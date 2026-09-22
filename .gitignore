@@ -13,3 +13,4 @@ build/
 # Banco local e material de estudo: nao vao para o git.
 degrau.db
 inbox/
+degrau-anki.csv

@@ -24,7 +24,7 @@ que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
 | M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
 | M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
 | M4 | Painel: números, escada de níveis, histórico, retenção | pronto |
-| M5 | Exportação para o Anki | a fazer |
+| M5 | Exportação para o Anki | pronto |
 | — | Adaptar pela web (antecipa o `ApiAdapter` do §14) | pronto |
 
 ## Como rodar
@@ -53,6 +53,7 @@ Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
 | `degrau texts` | Lista o que já entrou |
 | `degrau analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
 | `degrau serve` | Sobe a interface de leitura em http://127.0.0.1:8000 |
+| `degrau export` | Escreve o baralho como CSV para o Anki |
 
 `analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
 ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
@@ -161,6 +162,28 @@ Os gráficos são SVG inline, sem biblioteca: barras de 30 dias para trás, curv
 retenção para 30 dias à frente. O eixo da retenção vai de 0 a 100% inteiros —
 cortá-lo transformaria um declínio suave em precipício. Cada marca tem um
 `<title>`, e cada gráfico tem uma tabela embaixo, para quem quer o número exato.
+
+A **exportação para o Anki** sai por `degrau export` ou pelo botão no painel, e
+os dois produzem o mesmo arquivo byte a byte. Três colunas — a palavra, a
+tradução com o exemplo em itálico, e as tags — sob os cabeçalhos que o Anki
+precisa. Detalhes que decidem entre importar direto e ter que mexer no diálogo:
+
+- **`#tags column:3`.** Sem essa linha o Anki lê a terceira coluna como um
+  *campo*, não como tags — e num tipo de nota de dois campos ela some.
+- **O escape vem antes da marcação, nunca depois.** Com `#html:true` o Anki lê
+  cada campo como HTML, então um `&` na tradução tem que virar `&amp;` — mas o
+  `<br>` e o `<i>` que o app insere precisam sobreviver literais. Invertido, a
+  formatação aparece como sinais de maior e menor em cada cartão.
+- **`#deck` e `#notetype` só pré-selecionam "se existirem"**, diz o manual. O
+  nome do deck vai; o do tipo de nota não, porque o padrão se chama diferente em
+  cada idioma do Anki (`--notetype` se você quiser).
+- A primeira coluna é a palavra, e o Anki usa o primeiro campo como identidade
+  da nota — então reexportar **atualiza** as mesmas notas em vez de dobrar o
+  baralho.
+
+Cartão salvo clicando num texto sai com o verso vazio; o comando diz quantos
+estão assim. Referência: [Text Files, no manual do
+Anki](https://docs.ankiweb.net/importing/text-files.html).
 
 ## Calibragem
 

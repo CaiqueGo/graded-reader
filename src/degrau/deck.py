@@ -143,6 +143,11 @@ def save_word(
     return _as_value(word), True
 
 
+def as_values(rows: list[Word]) -> list[SavedWord]:
+    """Turn stored rows into plain values, for anything outside a session."""
+    return [_as_value(row) for row in rows]
+
+
 def update_word(
     session: Session,
     word_id: int,
@@ -179,6 +184,13 @@ def update_word(
                     f"{normalised!r} is already a card in your deck; "
                     "merging two cards is not something this can do for you"
                 )
+            # The shown form follows the base form when it was only ever a copy
+            # of it. Correcting "give" to "give up" and leaving the card reading
+            # "give" defeats the correction -- the front is what gets reviewed,
+            # and what gets exported. A display the reader typed themselves is
+            # left alone.
+            if word.display.strip().casefold() == word.lemma:
+                word.display = lemma.strip()
             word.lemma = normalised
             word.band = band_for(normalised)[0].value
 

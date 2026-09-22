@@ -12,16 +12,16 @@ from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlmodel import Session
 
+from degrau import anki, deck, jobs, library, reading, review, sources
 from degrau import dashboard as dashboard_module
-from degrau import deck, jobs, library, reading, review, sources
 from degrau.adapters.inbox import InboxError
 from degrau.library import ImportResult
 from degrau.reading import ReadingError
 from degrau.review import ReviewError
-from degrau.store import database, texts
+from degrau.store import database, texts, words
 from degrau.store import settings as settings_store
 from degrau.web import charts
 
@@ -396,4 +396,23 @@ def dashboard_screen(request: Request, session: SessionDep) -> HTMLResponse:
         history=charts.history_chart(panel),
         retention=charts.retention_chart(panel),
         chart=charts,
+    )
+
+
+# --- taking the deck elsewhere -------------------------------------------------
+
+
+@router.get("/export.csv", response_class=PlainTextResponse)
+def export_csv(session: SessionDep) -> PlainTextResponse:
+    """The deck as a file Anki can read.
+
+    Served as a download rather than rendered: the browser should hand it to
+    Anki, not display three hundred rows of CSV.
+    """
+    rows = words.for_export(session)
+    document = anki.render(anki.build_notes(deck.as_values(rows)))
+    return PlainTextResponse(
+        document,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="degrau-anki.csv"'},
     )

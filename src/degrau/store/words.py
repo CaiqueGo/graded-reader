@@ -115,3 +115,15 @@ def mastered_by_band(session: Session) -> dict[str, int]:
 
 def count_in_states(session: Session, states: list[str]) -> int:
     return len(list(session.exec(select(Word.id).where(col(Word.state).in_(states)))))
+
+
+def for_export(
+    session: Session, *, band: str | None = None, learned_only: bool = False
+) -> list[Word]:
+    """The cards to export, oldest first so the file is stable between runs."""
+    statement = select(Word)
+    if band:
+        statement = statement.where(col(Word.band) == band)
+    if learned_only:
+        statement = statement.where(col(Word.stability) >= MASTERED_STABILITY_DAYS)
+    return list(session.exec(statement.order_by(col(Word.id))))
