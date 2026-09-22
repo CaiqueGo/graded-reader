@@ -19,10 +19,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from fsrs import Card, Rating
 
-from degrau import deck, review
-from degrau.store import database, reviews, words
-from degrau.store import settings as settings_store
-from degrau.store.models import CardState
+from graded_reader import deck, review
+from graded_reader.store import database, reviews, words
+from graded_reader.store import settings as settings_store
+from graded_reader.store.models import CardState
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db")
 

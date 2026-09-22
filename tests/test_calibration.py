@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import pytest
 
-from degrau.lexicon import Band, band_for, coverage, load_bands, load_ngsl
-from degrau.lexicon.models import LEVELS, is_within, level_index
+from graded_reader.lexicon import Band, band_for, coverage, load_bands, load_ngsl
+from graded_reader.lexicon.models import LEVELS, is_within, level_index
 
 #: Forms the lemmatiser leaves alone and the NGSL files under another headword.
 FUNCTION_WORDS = [

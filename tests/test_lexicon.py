@@ -11,8 +11,16 @@ from pathlib import Path
 
 import pytest
 
-from degrau.lexicon import Band, LexiconError, band_for, coverage, lemmatize, load_bands, load_ngsl
-from degrau.lexicon.models import is_within, level_index, parse_level
+from graded_reader.lexicon import (
+    Band,
+    LexiconError,
+    band_for,
+    coverage,
+    lemmatize,
+    load_bands,
+    load_ngsl,
+)
+from graded_reader.lexicon.models import is_within, level_index, parse_level
 
 
 def lemmas(text: str) -> list[str]:

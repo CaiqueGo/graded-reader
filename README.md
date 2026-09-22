@@ -1,8 +1,8 @@
-# Degrau
+# Graded Reader
 
 Leitor de inglês graduado por nível, com flashcards próprios e painel de evolução.
 
-O Degrau pega **qualquer** texto e o reescreve no nível certo, extrai o vocabulário
+O Graded Reader pega **qualquer** texto e o reescreve no nível certo, extrai o vocabulário
 que vale a pena aprender, e acompanha o que foi realmente aprendido ao longo do
 tempo.
 
@@ -12,14 +12,14 @@ que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
 
 ## Por onde começar
 
-- [`docs/degrau-mvp.md`](docs/degrau-mvp.md) — a especificação completa: o problema,
+- [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — a especificação completa: o problema,
   a tese do produto, o contrato de importação, o modelo de dados e as etapas.
 
 ## Estado
 
 | Etapa | O que entrega | Status |
 |---|---|---|
-| M0 | Léxico: bandas, lematização, cobertura, `degrau analyze` | pronto |
+| M0 | Léxico: bandas, lematização, cobertura, `reader analyze` | pronto |
 | M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
 | M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
 | M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
@@ -35,7 +35,7 @@ uv pip install -e ".[lexicon,db,srs,web,adapt,dev]"
 python -m spacy download en_core_web_sm
 ```
 
-O caminho normal é `degrau serve` e o botão **Add a text** — cola um endereço ou
+O caminho normal é `reader serve` e o botão **Add a text** — cola um endereço ou
 o artigo, escolhe o nível, e pronto. O mesmo laço pelo terminal, quando quiser
 controle:
 
@@ -43,17 +43,17 @@ controle:
 /adapt A1 materia.txt
 ```
 
-Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
-`degrau import` e reporta a cobertura. Os comandos por trás dos dois:
+Ele roda `reader profile`, adapta o texto, grava o JSON em `inbox/`, roda
+`reader import` e reporta a cobertura. Os comandos por trás dos dois:
 
 | Comando | O que faz |
 |---|---|
-| `degrau profile --level A1` | Imprime o bloco de contexto para o prompt de adaptação |
-| `degrau import` | Valida, mede e grava o que está no `inbox/` |
-| `degrau texts` | Lista o que já entrou |
-| `degrau analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
-| `degrau serve` | Sobe a interface de leitura em http://127.0.0.1:8000 |
-| `degrau export` | Escreve o baralho como CSV para o Anki |
+| `reader profile --level A1` | Imprime o bloco de contexto para o prompt de adaptação |
+| `reader import` | Valida, mede e grava o que está no `inbox/` |
+| `reader texts` | Lista o que já entrou |
+| `reader analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
+| `reader serve` | Sobe a interface de leitura em http://127.0.0.1:8000 |
+| `reader export` | Escreve o baralho como CSV para o Anki |
 
 `analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
 ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
@@ -108,7 +108,7 @@ isso é aceitável aqui — mas é uma porta que não existe se um dia houver um
 segundo usuário.
 
 Nada disso exige terminal. Na **Biblioteca**, *Import waiting texts* faz o mesmo
-que `degrau import`, e *Paste a document* aceita o JSON colado direto no
+que `reader import`, e *Paste a document* aceita o JSON colado direto no
 navegador — ele é gravado no `inbox/` antes de ser lido, então um documento
 inválido acaba em `inbox/rejected/` com o motivo ao lado, em vez de sumir quando
 a página troca. Texto abaixo do limiar entra assim mesmo, marcado **out of
@@ -125,7 +125,7 @@ A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. A
 palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
 `machine` destaca `machines`. O texto original fica a um clique, na aba ao lado.
 
-`degrau serve` escuta só em localhost, e deve continuar assim: **não há
+`reader serve` escuta só em localhost, e deve continuar assim: **não há
 autenticação nenhuma neste app**, por decisão do MVP. Qualquer um que alcance a
 porta lê e altera o baralho.
 
@@ -163,7 +163,7 @@ retenção para 30 dias à frente. O eixo da retenção vai de 0 a 100% inteiros
 cortá-lo transformaria um declínio suave em precipício. Cada marca tem um
 `<title>`, e cada gráfico tem uma tabela embaixo, para quem quer o número exato.
 
-A **exportação para o Anki** sai por `degrau export` ou pelo botão no painel, e
+A **exportação para o Anki** sai por `reader export` ou pelo botão no painel, e
 os dois produzem o mesmo arquivo byte a byte. Três colunas — a palavra, a
 tradução com o exemplo em itálico, e as tags — sob os cabeçalhos que o Anki
 precisa. Detalhes que decidem entre importar direto e ter que mexer no diálogo:
@@ -210,7 +210,7 @@ as frases encurtaram.
 
 ## Dados
 
-O diretório de dados é `data/`, e `DEGRAU_DATA_DIR` sobrescreve — é o que permite
+O diretório de dados é `data/`, e `GRADED_READER_DATA_DIR` sobrescreve — é o que permite
 aos testes rodarem contra um diretório temporário sem tocar nas listas reais.
 
 - `data/ngsl.csv` — **New General Service List** (2.809 palavras), de
@@ -220,8 +220,8 @@ aos testes rodarem contra um diretório temporário sem tocar nas listas reais.
 - `data/bands.toml` — os cortes de banda e os limiares de cobertura.
 - `data/levels.toml` — o orçamento gramatical de cada nível, citado no prompt.
 
-O banco é um arquivo SQLite (`degrau.db`, sobrescrevível por `DEGRAU_DB`) e o
-`inbox/` por `DEGRAU_INBOX_DIR`. Nenhum dos dois vai para o git.
+O banco é um arquivo SQLite (`graded-reader.db`, sobrescrevível por `GRADED_READER_DB`) e o
+`inbox/` por `GRADED_READER_INBOX_DIR`. Nenhum dos dois vai para o git.
 
 Frequência fora da NGSL vem do [wordfreq](https://pypi.org/project/wordfreq/).
 
@@ -230,5 +230,5 @@ Frequência fora da NGSL vem do [wordfreq](https://pypi.org/project/wordfreq/).
 O código está sob Apache 2.0 ([`LICENSE`](LICENSE)). Dois arquivos dentro do
 repositório **não** são deste projeto e têm termos próprios — a lista NGSL em
 `data/` (CC BY-SA 4.0, que é *share-alike* e não é a licença do código) e o htmx
-em `src/degrau/web/static/` (0BSD). Os dois estão detalhados no
+em `src/graded_reader/web/static/` (0BSD). Os dois estão detalhados no
 [`NOTICE`](NOTICE).

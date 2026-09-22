@@ -12,7 +12,7 @@ import time
 
 import pytest
 
-from degrau.jobs import JobBusy, JobState, Runner
+from graded_reader.jobs import JobBusy, JobState, Runner
 
 
 def test_a_finished_job_carries_its_result() -> None:

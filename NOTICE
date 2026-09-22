@@ -1,4 +1,4 @@
-Degrau — a graded English reader
+Graded Reader — a graded English reader
 Copyright 2026 CaiqueGo (https://github.com/CaiqueGo)
 
 Licensed under the Apache License, Version 2.0. See LICENSE.
@@ -32,7 +32,7 @@ that covers the code. Anyone redistributing this word list, or a work adapted
 from it, is bound by those terms rather than by LICENSE.
 
 --------------------------------------------------------------------------------
-2. src/degrau/web/static/htmx.min.js — htmx 2.0.4
+2. src/graded_reader/web/static/htmx.min.js — htmx 2.0.4
 --------------------------------------------------------------------------------
 
 Source:  https://htmx.org/
@@ -41,7 +41,7 @@ License: BSD Zero Clause License (0BSD)
 0BSD asks for no attribution at all, so this entry is not required. It is here
 so that nobody reading the repository mistakes a vendored library for code
 written for this project. The file is bundled rather than loaded from a CDN
-because Degrau is a local application and should work with no network.
+because Graded Reader is a local application and should work with no network.
 
 ================================================================================
 

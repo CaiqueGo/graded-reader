@@ -17,8 +17,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from degrau import anki, deck
-from degrau.store import database, words
+from graded_reader import anki, deck
+from graded_reader.store import database, words
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db")
 
@@ -64,8 +64,8 @@ def test_the_third_column_is_declared_as_tags() -> None:
 
 def test_the_deck_is_named_and_the_notetype_is_not_guessed() -> None:
     """The default note type is called something different in each language."""
-    headers, _rows = parse(anki.render([anki.build_note(card())], deck="Degrau"))
-    assert "#deck:Degrau" in headers
+    headers, _rows = parse(anki.render([anki.build_note(card())], deck="Graded Reader"))
+    assert "#deck:Graded Reader" in headers
     assert not any(line.startswith("#notetype") for line in headers)
 
 
@@ -175,17 +175,17 @@ def test_accented_text_is_preserved() -> None:
 
 def test_the_tags_are_the_source_and_the_band() -> None:
     note = anki.build_note(card(band="A2"))
-    assert note.tags == "degrau A2"
+    assert note.tags == "graded-reader A2"
 
 
 def test_a_card_with_no_band_still_carries_the_source_tag() -> None:
-    assert anki.build_note(card(band="")).tags == "degrau"
+    assert anki.build_note(card(band="")).tags == "graded-reader"
 
 
 def test_a_tag_containing_a_space_is_joined_rather_than_split() -> None:
     """Spaces separate tags, so one with a space in it would become two."""
     note = anki.build_note(card(), extra_tags=["from a text"])
-    assert note.tags == "degrau B1 from-a-text"
+    assert note.tags == "graded-reader B1 from-a-text"
 
 
 # --- end to end -------------------------------------------------------------------

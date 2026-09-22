@@ -1,7 +1,7 @@
 ---
 description: Adapta um texto para o nível do leitor, grava o JSON no inbox e importa
 argument-hint: <nível> <arquivo-ou-url> [--new-words N]
-allowed-tools: Bash(degrau:*), Bash(python -m degrau.cli:*), Read, Write, WebFetch
+allowed-tools: Bash(reader:*), Bash(python -m graded_reader.cli:*), Read, Write, WebFetch
 ---
 
 # /adapt
@@ -18,7 +18,7 @@ Se faltar o nível ou a origem, **pare e pergunte** — não invente um nível.
 ### 1. Leia o perfil
 
 ```
-degrau profile --level <nível> [--new-words N]
+reader profile --level <nível> [--new-words N]
 ```
 
 A saída é o bloco de contexto. Ela traz o orçamento gramatical do nível e, o que
@@ -81,7 +81,7 @@ Em `inbox/AAAA-MM-DD-slug.json`, UTF-8, exatamente neste formato:
 ### 5. Importe
 
 ```
-degrau import
+reader import
 ```
 
 Ele valida, mede a cobertura e grava no banco. Arquivo inválido vai para
@@ -93,12 +93,12 @@ antes de tentar de novo. Reimportar o mesmo texto não duplica.
 Diga ao usuário: o título, o id do texto, a cobertura medida e quantas palavras
 ficaram acima do nível.
 
-Se o `degrau import` disser **below threshold**, ofereça uma segunda volta. O
+Se o `reader import` disser **below threshold**, ofereça uma segunda volta. O
 limiar é 95% para A1/A2, 92% para B1/B2, 90% para C1/C2. Para investigar antes de
 regravar:
 
 ```
-degrau analyze <arquivo.txt> --level <nível>
+reader analyze <arquivo.txt> --level <nível>
 ```
 
 Ele lista, por frequência, exatamente quais lemas passaram do nível — é essa lista

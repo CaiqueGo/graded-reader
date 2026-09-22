@@ -11,6 +11,6 @@ build/
 *.egg-info/
 
 # Banco local e material de estudo: nao vao para o git.
-degrau.db
+graded-reader.db
 inbox/
-degrau-anki.csv
+graded-reader-anki.csv

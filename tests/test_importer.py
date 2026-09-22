@@ -13,10 +13,10 @@ from pathlib import Path
 
 import pytest
 
-from degrau import config, library
-from degrau.adapters.inbox import InboxError, parse, pending
-from degrau.library import ImportAction, content_hash
-from degrau.store import database, texts
+from graded_reader import config, library
+from graded_reader.adapters.inbox import InboxError, parse, pending
+from graded_reader.library import ImportAction, content_hash
+from graded_reader.store import database, texts
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db", "tmp_inbox")
 

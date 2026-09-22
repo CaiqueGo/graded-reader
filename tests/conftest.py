@@ -111,15 +111,15 @@ def tmp_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     (data / "ngsl.csv").write_text(FAKE_NGSL, encoding="utf-8")
     (data / "bands.toml").write_text(BANDS_TOML, encoding="utf-8")
     (data / "levels.toml").write_text(LEVELS_TOML, encoding="utf-8")
-    monkeypatch.setenv("DEGRAU_DATA_DIR", str(data))
+    monkeypatch.setenv("GRADED_READER_DATA_DIR", str(data))
     return data
 
 
 @pytest.fixture()
 def tmp_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """An empty database of its own, created on first use."""
-    path = tmp_path / "degrau.db"
-    monkeypatch.setenv("DEGRAU_DB", str(path))
+    path = tmp_path / "graded-reader.db"
+    monkeypatch.setenv("GRADED_READER_DB", str(path))
     return path
 
 
@@ -128,7 +128,7 @@ def tmp_inbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """An inbox directory. processed/ and rejected/ are created on demand."""
     inbox = tmp_path / "inbox"
     inbox.mkdir()
-    monkeypatch.setenv("DEGRAU_INBOX_DIR", str(inbox))
+    monkeypatch.setenv("GRADED_READER_INBOX_DIR", str(inbox))
     return inbox
 
 

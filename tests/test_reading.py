@@ -14,11 +14,11 @@ from pathlib import Path
 
 import pytest
 
-from degrau import deck, library, reading
-from degrau.lexicon import tokenize
-from degrau.reading import ReadingError
-from degrau.store import database, words
-from degrau.store.models import CardState
+from graded_reader import deck, library, reading
+from graded_reader.lexicon import tokenize
+from graded_reader.reading import ReadingError
+from graded_reader.store import database, words
+from graded_reader.store.models import CardState
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db", "tmp_inbox")
 
@@ -202,7 +202,7 @@ def test_a_damaged_glossary_column_does_not_stop_you_reading(
     """The text is still readable, so refusing to open it helps nobody."""
     text_id = imported(drop_in)
     with database.session() as active:
-        from degrau.store import texts
+        from graded_reader.store import texts
 
         row = texts.by_id(active, text_id)
         assert row is not None
@@ -289,7 +289,7 @@ def test_the_stored_columns_are_json_the_view_can_read(drop_in: Callable[..., Pa
     """Guards the seam between what the importer writes and what reading parses."""
     text_id = imported(drop_in)
     with database.session() as active:
-        from degrau.store import texts
+        from graded_reader.store import texts
 
         row = texts.by_id(active, text_id)
         assert row is not None

@@ -18,18 +18,18 @@ from typing import Any
 import httpx
 import pytest
 
-from degrau import config, library, sources
-from degrau.adapters.claude_cli import (
+from graded_reader import config, library, sources
+from graded_reader.adapters.claude_cli import (
     AdapterError,
     ClaudeCliAdapter,
     Run,
     build_prompt,
     unfence,
 )
-from degrau.lexicon.models import Band
-from degrau.library import ImportAction
-from degrau.profile import LevelRules, Profile
-from degrau.store import database, texts
+from graded_reader.lexicon.models import Band
+from graded_reader.library import ImportAction
+from graded_reader.profile import LevelRules, Profile
+from graded_reader.store import database, texts
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db", "tmp_inbox")
 

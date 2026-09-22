@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ view.title }} - Graded Reader{% endblock %}
+
+{% block content %}
+<article class="reader">
+  <header class="reader-head">
+    <a class="back" href="/">&larr; Library</a>
+    <h1 class="reader-title">{{ view.title }}</h1>
+    <p class="coverage">
+      <span class="band-{{ view.level }} pill">{{ view.level }}</span>
+      {{ view.coverage_label }}
+      {% if view.above_level %}&middot; {{ view.above_level|length }} words above{% endif %}
+    </p>
+
+    <div class="switch" role="tablist">
+      <button class="switch-btn is-active"
+              hx-get="/texts/{{ view.id }}/adapted"
+              hx-target="#pane" hx-swap="innerHTML"
+              onclick="pickSwitch(this)">Adapted</button>
+      {% if view.has_original %}
+      <button class="switch-btn"
+              hx-get="/texts/{{ view.id }}/original"
+              hx-target="#pane" hx-swap="innerHTML"
+              onclick="pickSwitch(this)">Original</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="columns">
+    <div id="pane" class="pane">
+      {% include "partials/adapted.html" %}
+    </div>
+
+    <aside id="card" class="sidecard">
+      <p class="sidecard-idle">Click a word in the text to see it here.</p>
+    </aside>
+  </div>
+
+  <section id="glossary-section" class="below">
+    {% include "partials/glossary.html" %}
+  </section>
+
+  {% if view.questions %}
+  <section class="below">
+    <h2 class="section-title">Comprehension</h2>
+    <ol class="questions">
+      {% for question in view.questions %}
+      <li class="question">
+        <p class="question-q">{{ question.q }}</p>
+        <div id="answer-{{ question.index }}">
+          <button class="reveal"
+                  hx-get="/texts/{{ view.id }}/answer/{{ question.index }}"
+                  hx-target="#answer-{{ question.index }}"
+                  hx-swap="innerHTML">Show answer</button>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+</article>
+
+<script>
+  function pickSwitch(button) {
+    for (const other of button.parentElement.querySelectorAll('.switch-btn')) {
+      other.classList.remove('is-active');
+    }
+    button.classList.add('is-active');
+  }
+</script>
+{% endblock %}

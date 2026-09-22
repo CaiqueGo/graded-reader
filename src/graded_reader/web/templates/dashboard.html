@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Graded Reader{% endblock %}
+
+{% block content %}
+<div class="library-head">
+  <h1 class="page-title">Dashboard</h1>
+  {% if not panel.empty %}
+  <div class="library-actions">
+    <a class="secondary" href="/export.csv" download>Export for Anki</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if panel.empty %}
+<div class="empty">
+  <p>Nothing to measure yet.</p>
+  <p class="hint">Read a text and save some words &mdash; the numbers here are all
+    about the deck, because it is the only one that cannot be faked.</p>
+</div>
+{% else %}
+
+<section class="kpis">
+  {% for stat in panel.stats %}
+  <div class="kpi">
+    <p class="kpi-value">{{ stat.value }}</p>
+    <p class="kpi-label">{{ stat.label }}</p>
+    <p class="kpi-hint">{{ stat.hint }}</p>
+  </div>
+  {% endfor %}
+</section>
+
+{# --- the ladder ---------------------------------------------------------- #}
+<section class="panel">
+  <h2 class="section-title">The ladder</h2>
+  <p class="panel-lead">
+    How much of each band you have actually learned, over how many words that
+    band holds. This is a different question from how many cards you own.
+  </p>
+
+  <p class="legend">
+    <span class="key key-learned"></span> learned
+    <span class="key key-deck"></span> in the deck
+  </p>
+
+  <div class="ladder">
+    {% for rung in panel.ladder %}
+    <div class="rung{% if not rung.measurable %} rung-open{% endif %}">
+      <span class="pill band-{{ rung.level }}">{{ rung.level }}</span>
+      <div class="meter" role="img"
+           aria-label="{{ rung.level }}: {{ rung.mastered }} learned,
+                       {{ rung.in_deck }} in the deck{% if rung.measurable %} of {{ rung.total }}{% endif %}">
+        {% if rung.measurable %}
+        <div class="meter-deck" style="width: {{ (rung.deck_share * 100)|round(2) }}%"></div>
+        <div class="meter-fill" style="width: {{ (rung.share * 100)|round(2) }}%"></div>
+        {% endif %}
+      </div>
+      <span class="rung-count">
+        {{ rung.mastered }}{% if rung.measurable %} / {{ rung.total }}{% endif %}
+      </span>
+      <span class="rung-pct">{{ rung.percent }}</span>
+      <span class="rung-deck">{{ rung.in_deck }} in deck</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="hint">
+    C1 and C2 have no bar. Those bands come from a frequency scale with no end,
+    so there is no total to divide by &mdash; printing one would be inventing it.
+  </p>
+</section>
+
+{# --- history -------------------------------------------------------------- #}
+<section class="panel">
+  <h2 class="section-title">Reviews, last 30 days</h2>
+  <p class="panel-lead">{{ panel.reviewed_in_window }}
+    grading{{ "" if panel.reviewed_in_window == 1 else "s" }} in the window.</p>
+
+  {% if history.empty %}
+  <p class="hint">No reviews yet in this window.</p>
+  {% else %}
+  <svg class="chart" viewBox="0 0 {{ chart.WIDTH }} {{ chart.HEIGHT }}"
+       role="img" aria-label="Reviews per day over the last 30 days">
+    {% for tick in history.y_ticks %}
+    <line class="gridline" x1="{{ chart.PAD_LEFT }}" x2="{{ chart.WIDTH - chart.PAD_RIGHT }}"
+          y1="{{ tick.y }}" y2="{{ tick.y }}"></line>
+    <text class="axis-text" x="{{ chart.PAD_LEFT - 8 }}" y="{{ tick.y + 3.5 }}"
+          text-anchor="end">{{ tick.value }}</text>
+    {% endfor %}
+
+    {% for column in history.columns %}
+    <g>
+      <title>{{ column.title }}</title>
+      <rect class="hit" x="{{ column.hit_x }}" y="{{ chart.PAD_TOP }}"
+            width="{{ column.hit_width }}" height="{{ chart.PLOT_HEIGHT }}"></rect>
+      <path class="column{% if column.zero %} column-zero{% endif %}"
+            d="{{ column.path }}"></path>
+    </g>
+    {% endfor %}
+
+    {% for tick in history.x_ticks %}
+    <text class="axis-text" x="{{ tick.x }}" y="{{ chart.HEIGHT - 8 }}"
+          text-anchor="{{ tick.anchor }}">{{ tick.value }}</text>
+    {% endfor %}
+  </svg>
+  {% endif %}
+
+  <details class="table-view">
+    <summary>See the numbers</summary>
+    <table>
+      <thead><tr><th>Day</th><th>Reviews</th></tr></thead>
+      <tbody>
+        {% for entry in panel.history %}
+        <tr><td>{{ entry.label }}</td><td>{{ entry.count }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+
+{# --- retention ------------------------------------------------------------ #}
+<section class="panel">
+  <h2 class="section-title">Retention, next 30 days</h2>
+  <p class="panel-lead">
+    The deck's average chance of recall if nothing is reviewed. Where it falls is
+    where the work is arriving.
+  </p>
+
+  {% if retention.empty %}
+  <p class="hint">
+    Nothing has been graded yet, so there is no memory to predict. Review a few
+    cards and this fills in.
+  </p>
+  {% else %}
+  <svg class="chart" viewBox="0 0 {{ chart.WIDTH }} {{ chart.HEIGHT }}"
+       role="img" aria-label="Predicted average recall over the next 30 days">
+    {% for tick in retention.y_ticks %}
+    <line class="gridline" x1="{{ chart.PAD_LEFT }}" x2="{{ chart.WIDTH - chart.PAD_RIGHT }}"
+          y1="{{ tick.y }}" y2="{{ tick.y }}"></line>
+    <text class="axis-text" x="{{ chart.PAD_LEFT - 8 }}" y="{{ tick.y + 3.5 }}"
+          text-anchor="end">{{ tick.value }}</text>
+    {% endfor %}
+
+    <path class="area" d="{{ retention.area }}"></path>
+    <path class="line" d="{{ retention.path }}"></path>
+
+    {% for marker in retention.markers %}
+    <g>
+      <title>{{ marker.title }}</title>
+      <circle class="marker-hit" cx="{{ marker.x }}" cy="{{ marker.y }}" r="10"></circle>
+      <circle class="marker" cx="{{ marker.x }}" cy="{{ marker.y }}"
+              r="{{ chart.MARKER_RADIUS }}"></circle>
+    </g>
+    {% endfor %}
+
+    <text class="end-label" x="{{ retention.end_x - 8 }}" y="{{ retention.end_y - 12 }}"
+          text-anchor="end">{{ retention.end_label }}</text>
+
+    {% for tick in retention.x_ticks %}
+    <text class="axis-text" x="{{ tick.x }}" y="{{ chart.HEIGHT - 8 }}"
+          text-anchor="{{ tick.anchor }}">{{ tick.value }}</text>
+    {% endfor %}
+  </svg>
+  {% endif %}
+
+  <details class="table-view">
+    <summary>See the numbers</summary>
+    <table>
+      <thead><tr><th>Day</th><th>Recall</th><th>Due</th></tr></thead>
+      <tbody>
+        {% for point in panel.retention %}
+        <tr>
+          <td>{{ point.day.strftime("%d/%m") }}</td>
+          <td>{{ "%.0f"|format(point.retention * 100) }}%</td>
+          <td>{{ point.due }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+{% endif %}
+{% endblock %}

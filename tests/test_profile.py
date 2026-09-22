@@ -12,9 +12,9 @@ from datetime import timedelta
 
 import pytest
 
-from degrau import config, library
-from degrau.lexicon.models import Band
-from degrau.profile import (
+from graded_reader import config, library
+from graded_reader.lexicon.models import Band
+from graded_reader.profile import (
     MAX_EXCEPTIONS,
     MAX_NEW_WORDS,
     MIN_NEW_WORDS,
@@ -26,8 +26,8 @@ from degrau.profile import (
     next_band,
     render,
 )
-from degrau.store import database
-from degrau.store.models import CardState, Word, utcnow
+from graded_reader.store import database
+from graded_reader.store.models import CardState, Word, utcnow
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db")
 

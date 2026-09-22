@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Review - Graded Reader{% endblock %}
+
+{% block content %}
+<div class="review" id="review">
+  {% include "partials/review_card.html" %}
+</div>
+
+<script>
+  /* The keyboard is the interface here. Section 10 of the MVP is blunt about it:
+     without one, grading forty cards is punishment. The mouse works too, but
+     nobody who reviews daily uses it. */
+  (function () {
+    function within() { return document.querySelector('#review'); }
+
+    function press(selector) {
+      const button = within()?.querySelector(selector);
+      if (button && !button.disabled) { button.click(); return true; }
+      return false;
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (event.key === ' ' || event.key === 'Enter') {
+        if (press('[data-reveal]')) event.preventDefault();
+        return;
+      }
+      if (['1', '2', '3', '4'].includes(event.key)) {
+        if (press('[data-rating="' + event.key + '"]')) event.preventDefault();
+        return;
+      }
+      if (event.key === 'u') {
+        if (press('[data-undo]')) event.preventDefault();
+      }
+    });
+
+    /* Each swap brings a fresh card with its answer hidden again. */
+    document.body.addEventListener('htmx:afterSwap', function () {
+      window.scrollTo({ top: 0 });
+    });
+  })();
+</script>
+{% endblock %}
