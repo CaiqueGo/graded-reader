@@ -12,6 +12,9 @@ que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
 
 ## Por onde começar
 
+- [`docs/como-funciona.md`](docs/como-funciona.md) — **como o sistema funciona hoje**:
+  cada tela, o que é o glossário, como a fila do review decide o que mostrar, e
+  o que cada número do painel afirma. Comece por aqui para usar.
 - [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — a especificação completa: o problema,
   a tese do produto, o contrato de importação, o modelo de dados e as etapas.
 
@@ -59,31 +62,37 @@ Ele roda `reader profile`, adapta o texto, grava o JSON em `inbox/`, roda
 ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
 `--known arquivo.txt` (um lema por linha).
 
-A revisão (`/review`) é movida pelo teclado, e isso não é enfeite: **espaço**
-revela, **1–4** avaliam (Again, Hard, Good, Easy), **u** desfaz a última nota. Os
-intervalos nos botões vêm marcados com `~` de propósito — o FSRS embaralha os
-intervalos para que oito palavras salvas do mesmo texto não voltem todas no mesmo
-dia para sempre, então o número exibido é a ordem de grandeza, não a promessa.
+## Como funciona
 
-Desfazer restaura o cartão a partir de um retrato guardado na hora da nota, e
-apaga a linha da revisão. Um clique errado não é história, e deixá-lo lá sujaria a
-curva de retenção e a contagem do dia.
+O passo a passo de cada tela está em
+[`docs/como-funciona.md`](docs/como-funciona.md) — o que é o glossário, como a
+fila do review decide o que mostrar, e o que cada número do painel afirma. Em
+uma frase cada:
 
-O limite diário de cartões novos (padrão 10, em `setting.daily_new_cards`) conta
-**primeiras aparições**, não avaliações: um cartão revisto quatro vezes hoje
-gastou uma vaga, não quatro.
+- **Biblioteca** — *Add a text* recebe um endereço ou o artigo colado e adapta
+  sozinho; *Import waiting texts* e *Or paste the document* são as portas sem
+  terminal para o `inbox/`.
+- **Leitura** — clicar numa palavra cria um cartão de palavra, selecionar um
+  trecho cria um cartão de frase. O **glossário** embaixo do texto é o
+  vocabulário que a adaptação escolheu ensinar, e *Save all* manda tudo de uma
+  vez para o baralho sem reiniciar o agendamento de quem já estava lá.
+- **Review** — a fila do dia, movida pelo teclado: **espaço** revela, **1–4**
+  avaliam, **u** desfaz. O limite diário de cartões novos (padrão 10) conta
+  primeiras aparições, não avaliações.
+- **Painel** — a escada de níveis, o histórico, a retenção, e a exportação para
+  o Anki.
 
-Em *Add a text*, você cola um endereço ou o texto e o app adapta sozinho. O §3 do
-MVP punha isso na v2, e o §13 diz que a fricção do modo manual é o sinal de que a
-v2 vale a pena — o sinal veio cedo. É o `Adapter` do §14 com uma segunda
-implementação, o `ClaudeCliAdapter`, ao lado do `InboxAdapter`.
+## Decisões que parecem detalhe
+
+A adaptação pela web é o `Adapter` do §14 com uma segunda implementação, o
+`ClaudeCliAdapter`, ao lado do `InboxAdapter`. O §3 do MVP punha isso na v2, e o
+§13 diz que a fricção do modo manual é o sinal de que a v2 vale a pena — o sinal
+veio cedo.
 
 **Não é a API paga.** O adaptador chama o binário `claude` que já está instalado
 e logado na sua máquina, então gasta o mesmo plano que digitar o comando no
 terminal. O `total_cost_usd` que o CLI reporta é o equivalente em API, não uma
 cobrança.
-
-Três decisões que parecem detalhe e não são:
 
 - **O processo filho roda sem ferramenta nenhuma** (`--tools ""`). O artigo que
   você manda adaptar é texto não confiável; um agente com `Write` e `Bash` lendo
@@ -102,98 +111,14 @@ O `/adapt` continua existindo como caminho manual, e é o mesmo bloco de perfil 
 dois — se divergirem, as adaptações ficariam sutilmente piores por uma das portas
 e nada avisaria.
 
-**Limite conhecido:** o app busca qualquer endereço http(s) que você digitar,
-inclusive de rede local. Como só você digita, e o app só escuta em localhost,
-isso é aceitável aqui — mas é uma porta que não existe se um dia houver um
-segundo usuário.
-
-Nada disso exige terminal. Na **Biblioteca**, *Import waiting texts* faz o mesmo
-que `reader import`, e *Paste a document* aceita o JSON colado direto no
-navegador — ele é gravado no `inbox/` antes de ser lido, então um documento
-inválido acaba em `inbox/rejected/` com o motivo ao lado, em vez de sumir quando
-a página troca. Texto abaixo do limiar entra assim mesmo, marcado **out of
-level**: o §6 manda mostrar o número e deixar você decidir.
-
-No **Review** dá para adicionar palavra direto ao baralho, sem passar por texto
-nenhum, e corrigir o cartão na hora em que ele aparece — inclusive **o lema**. O
-§13 aponta a lematização como o ponto fraco conhecido (`give up` ≠ `give`), e
-poder consertar a forma base é a mitigação que ele pede. Corrigir o lema não
-mexe no agendamento: é o mesmo cartão. Renomear para um lema que já existe é
-recusado, porque fundir dois históricos é decisão sua, não do app.
-
-## Cartões de frase
-
-Uma palavra sozinha é ambígua e fácil de "saber" sem conseguir usar. Por isso o
-baralho aceita dois tipos de cartão, e o segundo é o que a maioria de quem estuda
-com repetição espaçada realmente usa:
-
-- **Cartão de palavra** — a palavra na frente, tradução e exemplo atrás. É o que
-  nasce ao clicar uma palavra no texto.
-- **Cartão de frase** — a frase na frente, com a palavra que ela ensina
-  **destacada**, e o sentido atrás. Nasce ao **selecionar um trecho com o mouse**
-  durante a leitura: aparece um botão junto da seleção, você escolhe qual palavra
-  do trecho é o alvo, escreve o que a frase quer dizer, e pronto.
-
-A palavra-alvo é **marcada, não apagada**. Apagá-la transformaria o cartão num
-exercício de completar lacuna; o ponto de um cartão de frase é ler a frase e
-saber o que ela diz, com a palavra que a fez valer a pena em evidência.
-
-O recorte é o que você selecionou, sem ajuste — uma oração, uma expressão ou meia
-linha podem ser a coisa que vale ensaiar, e cortar na fronteira da frase seria
-adivinhar por você. Na hora de escolher o alvo, as palavras que o texto marcou
-como acima do seu nível aparecem primeiro: são as que provavelmente levaram você
-a selecionar aquilo.
-
-Nada disso mexe nos cartões de palavra que você já tem. Os dois convivem na mesma
-fila e no mesmo arquivo do Anki, onde a tag diz qual é qual (`graded-reader word`
-e `graded-reader sentence`) para você poder dar ajustes diferentes a cada tipo.
-
-A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. As
-palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
-`machine` destaca `machines`. O texto original fica a um clique, na aba ao lado.
-
-`reader serve` escuta só em localhost, e deve continuar assim: **não há
-autenticação nenhuma neste app**, por decisão do MVP. Qualquer um que alcance a
-porta lê e altera o baralho.
-
-`import` nunca apaga a sua entrada: arquivo inválido vai para `inbox/rejected/`
-com um `.error.txt` ao lado dizendo o motivo, e reimportar o mesmo texto não
-duplica (a identidade é o hash do inglês adaptado).
-
-Os portões, na ordem em que valem:
-
-```
-ruff format . && ruff check . && mypy && pytest
-```
-
-O **painel** responde uma pergunta só, e ela não é "quantos cartões eu tenho".
-A escada mostra, para cada faixa, quantas palavras daquela faixa você já
-aprendeu sobre o tamanho da faixa — 58 de 500 do A1 é 11,6%, e isso é
-informação; 140 cartões no baralho não é. O denominador vem da lista de
-palavras, então recalibrar `bands.toml` move a escada junto.
-
-Duas coisas o painel se recusa a responder, de propósito. **C1 e C2 não têm
-barra**: vêm de uma escala de frequência sem fim, não existe total para dividir,
-e imprimir um seria inventá-lo. E a **retenção fica em branco** até haver
-tentativas reais de recordação — os passos de aprendizagem são separados por
-minutos, e contá-los como retenção infla o número sem dizer nada. Um painel
-confiantemente errado é pior que painel nenhum, porque nada na tela avisa para
-duvidar.
-
 Os arquivos estáticos são servidos com a impressão digital do conteúdo na URL
 (`app.css?v=fb6014d5`). Sem isso, o navegador guarda a folha de estilo antiga e
 uma mudança de CSS chega como tela quebrada — que foi exatamente o que
 aconteceu, e é um bug que se parece com CSS errado sendo cache velho.
 
-Os gráficos são SVG inline, sem biblioteca: barras de 30 dias para trás, curva de
-retenção para 30 dias à frente. O eixo da retenção vai de 0 a 100% inteiros —
-cortá-lo transformaria um declínio suave em precipício. Cada marca tem um
-`<title>`, e cada gráfico tem uma tabela embaixo, para quem quer o número exato.
-
 A **exportação para o Anki** sai por `reader export` ou pelo botão no painel, e
-os dois produzem o mesmo arquivo byte a byte. Três colunas — a palavra, a
-tradução com o exemplo em itálico, e as tags — sob os cabeçalhos que o Anki
-precisa. Detalhes que decidem entre importar direto e ter que mexer no diálogo:
+os dois produzem o mesmo arquivo byte a byte. Detalhes que decidem entre
+importar direto e ter que mexer no diálogo:
 
 - **`#tags column:3`.** Sem essa linha o Anki lê a terceira coluna como um
   *campo*, não como tags — e num tipo de nota de dois campos ela some.
@@ -208,9 +133,28 @@ precisa. Detalhes que decidem entre importar direto e ter que mexer no diálogo:
   da nota — então reexportar **atualiza** as mesmas notas em vez de dobrar o
   baralho.
 
-Cartão salvo clicando num texto sai com o verso vazio; o comando diz quantos
-estão assim. Referência: [Text Files, no manual do
+Referência: [Text Files, no manual do
 Anki](https://docs.ankiweb.net/importing/text-files.html).
+
+## Limites conhecidos
+
+`reader serve` escuta só em localhost, e deve continuar assim: **não há
+autenticação nenhuma neste app**, por decisão do MVP. Qualquer um que alcance a
+porta lê e altera o baralho.
+
+O app busca qualquer endereço http(s) que você digitar, inclusive de rede local.
+Como só você digita, e o app só escuta em localhost, isso é aceitável aqui — mas
+é uma porta que não existe se um dia houver um segundo usuário.
+
+`import` nunca apaga a sua entrada: arquivo inválido vai para `inbox/rejected/`
+com um `.error.txt` ao lado dizendo o motivo, e reimportar o mesmo texto não
+duplica (a identidade é o hash do inglês adaptado).
+
+Os portões, na ordem em que valem:
+
+```
+ruff format . && ruff check . && mypy && pytest
+```
 
 ## Calibragem
 
