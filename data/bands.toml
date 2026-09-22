@@ -1,0 +1,33 @@
+# Where a word sits on the CEFR scale.
+#
+# These numbers are calibrated guesses, not truth. The NGSL is a general
+# frequency list, not an official CEFR mapping. They live in this file, and not
+# in the code, precisely so you can move them: after twenty texts, compare how
+# hard a text *felt* against the coverage it scored, and adjust.
+
+[ngsl]
+# Inclusive ceiling of the NGSL rank for each band. A word ranked 1..500 is A1,
+# 501..1000 is A2, and so on. The list stops at 2809.
+A1 = 500
+A2 = 1000
+B1 = 2000
+B2 = 2809
+
+[zipf]
+# Words absent from the NGSL fall back to the wordfreq Zipf scale, which is
+# open ended. Each entry is the inclusive floor for that band; anything below
+# the lowest floor is C2. Unknown words score 0.0 and land in C2, which is the
+# behaviour we want: a word nobody counted is not a word a beginner knows.
+B2 = 4.0
+C1 = 3.0
+
+[coverage]
+# Minimum share of in-band tokens for a text to count as being at that level.
+# Higher levels tolerate more unknown words because the reader has the tools to
+# infer them from context.
+A1 = 0.95
+A2 = 0.95
+B1 = 0.92
+B2 = 0.92
+C1 = 0.90
+C2 = 0.90

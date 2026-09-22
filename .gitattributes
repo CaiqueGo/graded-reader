@@ -1,0 +1,7 @@
+# Normalize to LF in the repository: ruff format output must not depend on which
+# machine wrote the file, and a line-ending flip turns a one-line change into a
+# whole-file diff.
+* text=auto eol=lf
+
+# Reference data, kept exactly as published.
+data/ngsl.csv text eol=lf
