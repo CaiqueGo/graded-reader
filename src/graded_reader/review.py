@@ -65,6 +65,7 @@ class QueueCounts(BaseModel):
 
     due: int = 0
     new: int = 0
+    new_total: int = 0
     reviewed_today: int = 0
     introduced_today: int = 0
     daily_new_limit: int = 0
@@ -76,6 +77,16 @@ class QueueCounts(BaseModel):
     @property
     def new_left_today(self) -> int:
         return max(0, self.daily_new_limit - self.introduced_today)
+
+    @property
+    def held_back(self) -> int:
+        """New cards that exist but are behind today's limit.
+
+        Reported because not reporting it is a trap: you save a card, come to
+        review, and it is not there. The screen said "10 new" and meant "ten is
+        all you may start today", which reads as "ten is all there is".
+        """
+        return max(0, self.new_total - self.new)
 
 
 class Segment(BaseModel):
@@ -276,10 +287,22 @@ def counts(session: Session, *, now: datetime | None = None) -> QueueCounts:
     return QueueCounts(
         due=len(reviews.due_words(session, moment)),
         new=len(reviews.new_words(session, limit=max(0, limit - introduced))),
+        new_total=reviews.count_new(session),
         reviewed_today=reviews.count_between(session, start, end),
         introduced_today=introduced,
         daily_new_limit=limit,
     )
+
+
+def set_daily_limit(session: Session, limit: int) -> int:
+    """Change how many unseen cards may start in a day, and return the new value.
+
+    On the review screen rather than buried in settings, because the moment you
+    want to change it is the moment you just hit it.
+    """
+    value = max(0, min(200, limit))
+    settings_store.set_value(session, settings_store.KEY_DAILY_NEW, str(value))
+    return value
 
 
 def next_word(session: Session, *, now: datetime | None = None) -> Word | None:

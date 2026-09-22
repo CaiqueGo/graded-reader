@@ -206,6 +206,17 @@ def grade_card(
     return render(request, "partials/review_card.html", **_review_context(session))
 
 
+@router.post("/review/limit", response_class=HTMLResponse)
+def change_daily_limit(
+    request: Request,
+    session: SessionDep,
+    limit: Annotated[int, Form(ge=0, le=200)],
+) -> HTMLResponse:
+    """Change how many unseen cards may start today, from the review screen."""
+    review.set_daily_limit(session, limit)
+    return render(request, "partials/review_card.html", **_review_context(session))
+
+
 @router.post("/review/undo", response_class=HTMLResponse)
 def undo(request: Request, session: SessionDep) -> HTMLResponse:
     """Take back the last answer and show that card again."""

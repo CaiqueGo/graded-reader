@@ -408,3 +408,63 @@ def test_three_days_of_reviews_behave() -> None:
 
     with database.session() as active:
         assert len(reviews.history(active, word_id)) == 4
+
+
+# --- the backlog behind the daily limit -------------------------------------------
+
+
+def test_the_count_says_how_many_are_waiting_behind_the_limit() -> None:
+    """Saving a card and not finding it in review is the trap this closes."""
+    for lemma in ["rock", "stone", "thick", "thirst", "sign"]:
+        add(lemma)
+    with database.session() as active:
+        settings_store.set_value(active, settings_store.KEY_DAILY_NEW, "2")
+
+    with database.session() as active:
+        state = review.counts(active, now=datetime(2026, 9, 21, 9, 0, tzinfo=UTC))
+
+    assert state.new == 2, "what may start today"
+    assert state.new_total == 5, "what exists"
+    assert state.held_back == 3, "and the difference is said out loud"
+
+
+def test_nothing_is_reported_as_waiting_when_the_limit_is_not_reached() -> None:
+    add("rock")
+    with database.session() as active:
+        assert review.counts(active).held_back == 0
+
+
+def test_raising_the_limit_releases_what_was_waiting() -> None:
+    moment = datetime(2026, 9, 21, 9, 0, tzinfo=UTC)
+    for lemma in ["rock", "stone", "thick"]:
+        add(lemma)
+    with database.session() as active:
+        settings_store.set_value(active, settings_store.KEY_DAILY_NEW, "1")
+    with database.session() as active:
+        assert review.counts(active, now=moment).held_back == 2
+
+    with database.session() as active:
+        assert review.set_daily_limit(active, 10) == 10
+    with database.session() as active:
+        state = review.counts(active, now=moment)
+    assert state.held_back == 0
+    assert state.new == 3
+
+
+def test_the_limit_cannot_be_set_to_something_absurd() -> None:
+    with database.session() as active:
+        assert review.set_daily_limit(active, -5) == 0
+        assert review.set_daily_limit(active, 10_000) == 200
+
+
+def test_a_card_saved_today_waits_behind_older_ones_but_is_counted() -> None:
+    """Oldest first is deliberate; going missing from the tally is not."""
+    old = add("rock")
+    add("stone")
+    with database.session() as active:
+        settings_store.set_value(active, settings_store.KEY_DAILY_NEW, "1")
+
+    with database.session() as active:
+        nxt = review.next_word(active, now=datetime(2026, 9, 21, 9, 0, tzinfo=UTC))
+        assert nxt is not None and nxt.id == old
+        assert review.counts(active).held_back == 1

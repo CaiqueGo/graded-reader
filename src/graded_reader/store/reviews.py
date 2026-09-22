@@ -121,3 +121,8 @@ def between(session: Session, start: datetime, end: datetime) -> list[Review]:
         .order_by(col(Review.reviewed_at))
     )
     return list(session.exec(statement))
+
+
+def count_new(session: Session) -> int:
+    """Every card never graded, whatever today's limit allows through."""
+    return len(list(session.exec(select(Word.id).where(col(Word.state) == "new"))))

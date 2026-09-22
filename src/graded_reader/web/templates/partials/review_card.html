@@ -6,6 +6,11 @@
 <div class="review-counters">
   <span title="Cards due">{{ counts.due }} due</span>
   <span title="New cards still allowed today">{{ counts.new }} new</span>
+  {% if counts.held_back %}
+  <span class="counter-held" title="Saved, but behind today's limit on new cards">
+    +{{ counts.held_back }} waiting
+  </span>
+  {% endif %}
   <span class="counter-done">{{ counts.reviewed_today }} done today</span>
   {% if undone %}<span class="counter-undone">took back {{ undone }}</span>{% endif %}
   {% if added %}<span class="counter-added">added {{ added }}</span>{% endif %}
@@ -98,6 +103,22 @@
   {% if counts.reviewed_today %}
   <form hx-post="/review/undo" hx-target="#review" hx-swap="innerHTML">
     <button class="undo" type="submit" data-undo>Undo last <kbd>u</kbd></button>
+  </form>
+  {% endif %}
+
+  {% if counts.held_back %}
+  {# Saving a card and not finding it is the trap this closes: the limit is the
+     reason, and the moment you hit it is the moment you want to change it. #}
+  <form class="limit-form" hx-post="/review/limit" hx-target="#review" hx-swap="innerHTML">
+    <p class="hint">
+      {{ counts.held_back }} card{{ "" if counts.held_back == 1 else "s" }} you saved
+      {{ "is" if counts.held_back == 1 else "are" }} waiting behind today's limit of
+      {{ counts.daily_new_limit }} new. They come up tomorrow, or now if you raise it.
+    </p>
+    <label for="daily-limit">New cards a day</label>
+    <input id="daily-limit" name="limit" type="number" min="0" max="200"
+           value="{{ counts.daily_new_limit }}">
+    <button class="secondary" type="submit">Save limit</button>
   </form>
   {% endif %}
 
