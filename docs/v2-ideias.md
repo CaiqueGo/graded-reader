@@ -152,6 +152,23 @@ a parte que não ensina inglês.
 
 ---
 
+## Decisões em aberto
+
+Cada item acima esbarra numa escolha que código nenhum resolve. Estão juntas
+aqui para serem respondidas de uma vez, quando forem:
+
+| # | A pergunta | Recomendação |
+|---|---|---|
+| 1 | O que acontece com os cartões de um texto apagado? | Soltar a referência, e ligar `PRAGMA foreign_keys = ON` |
+| 2 | A voz do navegador basta, ou vai precisar de TTS pago? | Começar com a do navegador; só pagar se o ouvido reclamar |
+| 3 | Quais peças do Anki importam? | Navegador do baralho primeiro, suspender depois; tipos de nota nunca |
+| 4 | Ler livro inteiro ou tirar trecho de PDF? | Trecho, até existir motivo para a noção de obra em capítulos |
+| 5 | Legenda sincronizada ou texto bem adaptado? | Texto bem adaptado, sem karaokê |
+| 6 | Remontar a página ou guardar a estrutura da conversa? | Estrutura, sempre |
+
+Nenhuma delas precisa ser respondida agora. Todas ficam mais fáceis depois de
+duas semanas de uso real.
+
 ## Sugestão de ordem
 
 1. **Apagar textos** — dias, e conserta uma falha de integridade que já existe
