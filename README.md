@@ -17,6 +17,8 @@ que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
   o que cada número do painel afirma. Comece por aqui para usar.
 - [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — a especificação completa: o problema,
   a tese do produto, o contrato de importação, o modelo de dados e as etapas.
+- [`docs/v2-ideias.md`](docs/v2-ideias.md) — o que foi levantado para a v2, com custo e
+  ressalva de cada ideia. **Nada decidido.**
 
 ## Estado
 
