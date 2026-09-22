@@ -110,3 +110,14 @@ def day_bounds(now: datetime) -> tuple[datetime, datetime]:
     local = now.astimezone()
     start = local.replace(hour=0, minute=0, second=0, microsecond=0)
     return start.astimezone(now.tzinfo), (start + timedelta(days=1)).astimezone(now.tzinfo)
+
+
+def between(session: Session, start: datetime, end: datetime) -> list[Review]:
+    """Every grading in a window, oldest first."""
+    statement = (
+        select(Review)
+        .where(col(Review.reviewed_at) >= start)
+        .where(col(Review.reviewed_at) < end)
+        .order_by(col(Review.reviewed_at))
+    )
+    return list(session.exec(statement))

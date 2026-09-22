@@ -82,3 +82,36 @@ def lemmas_in(session: Session, lemmas: set[str]) -> set[str]:
 def by_id(session: Session, word_id: int) -> Word | None:
     """One card by its id."""
     return session.get(Word, word_id)
+
+
+def all_cards(session: Session) -> list[Word]:
+    """Every card in the deck. The dashboard reads the whole thing.
+
+    A personal deck is hundreds of rows, not millions, and the retention curve
+    needs each card's own schedule -- there is no SQL for "average probability
+    of recall in eleven days".
+    """
+    return list(session.exec(select(Word).order_by(col(Word.id))))
+
+
+def count_by_band(session: Session) -> dict[str, int]:
+    """How many cards sit in each band."""
+    counts: dict[str, int] = {}
+    for band in session.exec(select(Word.band)):
+        key = band or "NA"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def mastered_by_band(session: Session) -> dict[str, int]:
+    """How many cards in each band have survived long enough to count."""
+    statement = select(Word.band).where(col(Word.stability) >= MASTERED_STABILITY_DAYS)
+    counts: dict[str, int] = {}
+    for band in session.exec(statement):
+        key = band or "NA"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def count_in_states(session: Session, states: list[str]) -> int:
+    return len(list(session.exec(select(Word.id).where(col(Word.state).in_(states)))))

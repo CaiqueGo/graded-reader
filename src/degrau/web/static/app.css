@@ -619,3 +619,110 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation: none; border-top-color: var(--accent-soft); }
 }
+
+/* --- dashboard ------------------------------------------------------------ */
+
+/* The chart ink is a step more saturated than the interface accent. The UI
+   green is deliberately quiet, and at that chroma a bar reads as gray next to
+   the gridlines -- data has to be the loud thing on a chart. */
+:root {
+  --data: #177f63;
+  --data-wash: #177f631a;
+  --grid: #e8e4dc;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 0.9rem 1rem;
+}
+.kpi-value {
+  font-family: var(--sans);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0 0 0.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-label { font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); margin: 0; }
+.kpi-hint { font-size: 0.72rem; color: var(--ink-faint); margin: 0.15rem 0 0; }
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.panel-lead { font-size: 0.85rem; color: var(--ink-soft); margin: 0.4rem 0 1.25rem; }
+
+/* --- the ladder ----------------------------------------------------------- */
+
+.ladder { display: flex; flex-direction: column; gap: 0.6rem; }
+.rung {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) 6rem 3.5rem 5.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+.meter {
+  height: 0.65rem;
+  background: var(--grid);
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+.meter-fill { height: 100%; background: var(--data); border-radius: 0.35rem; }
+.rung-open .meter { background: repeating-linear-gradient(
+  135deg, var(--grid) 0 5px, transparent 5px 10px); }
+.rung-count { font-variant-numeric: tabular-nums; color: var(--ink); }
+.rung-pct { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.rung-deck { font-size: 0.75rem; color: var(--ink-faint); text-align: right; }
+
+/* --- charts --------------------------------------------------------------- */
+
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.axis-text { font-family: var(--sans); font-size: 10px; fill: var(--ink-faint); }
+
+/* A 2px gap in the surface colour is what separates neighbouring bars -- never
+   a stroke, which would add ink that is not data. The gap is in the geometry. */
+.column { fill: var(--data); }
+.column-zero { fill: var(--grid); }
+.hit, .marker-hit { fill: transparent; }
+.hit:hover + .column, .hit:hover ~ .column { fill: var(--ink); }
+
+.area { fill: var(--data-wash); stroke: none; }
+.line { fill: none; stroke: var(--data); stroke-width: 2; stroke-linejoin: round;
+        stroke-linecap: round; }
+.marker { fill: var(--data); stroke: var(--card); stroke-width: 2; }
+.end-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink-soft);
+}
+
+.table-view { margin-top: 1rem; font-size: 0.82rem; color: var(--ink-faint); }
+.table-view summary { cursor: pointer; }
+.table-view table { border-collapse: collapse; margin-top: 0.6rem; width: 100%; max-width: 22rem; }
+.table-view th, .table-view td {
+  text-align: left;
+  padding: 0.2rem 0.75rem 0.2rem 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.table-view th { color: var(--ink-soft); font-weight: 600; }
+
+@media (max-width: 40rem) {
+  .rung { grid-template-columns: 2.4rem minmax(0, 1fr) 4.5rem; }
+  .rung-pct, .rung-deck { display: none; }
+}

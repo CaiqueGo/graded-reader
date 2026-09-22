@@ -23,7 +23,7 @@ que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
 | M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
 | M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
 | M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
-| M4 | Painel | a fazer |
+| M4 | Painel: números, escada de níveis, histórico, retenção | pronto |
 | M5 | Exportação para o Anki | a fazer |
 | — | Adaptar pela web (antecipa o `ApiAdapter` do §14) | pronto |
 
@@ -137,6 +137,25 @@ Os portões, na ordem em que valem:
 ```
 ruff format . && ruff check . && mypy && pytest
 ```
+
+O **painel** responde uma pergunta só, e ela não é "quantos cartões eu tenho".
+A escada mostra, para cada faixa, quantas palavras daquela faixa você já
+aprendeu sobre o tamanho da faixa — 58 de 500 do A1 é 11,6%, e isso é
+informação; 140 cartões no baralho não é. O denominador vem da lista de
+palavras, então recalibrar `bands.toml` move a escada junto.
+
+Duas coisas o painel se recusa a responder, de propósito. **C1 e C2 não têm
+barra**: vêm de uma escala de frequência sem fim, não existe total para dividir,
+e imprimir um seria inventá-lo. E a **retenção fica em branco** até haver
+tentativas reais de recordação — os passos de aprendizagem são separados por
+minutos, e contá-los como retenção infla o número sem dizer nada. Um painel
+confiantemente errado é pior que painel nenhum, porque nada na tela avisa para
+duvidar.
+
+Os gráficos são SVG inline, sem biblioteca: barras de 30 dias para trás, curva de
+retenção para 30 dias à frente. O eixo da retenção vai de 0 a 100% inteiros —
+cortá-lo transformaria um declínio suave em precipício. Cada marca tem um
+`<title>`, e cada gráfico tem uma tabela embaixo, para quem quer o número exato.
 
 ## Calibragem
 

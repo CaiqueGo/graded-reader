@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
+from degrau import dashboard as dashboard_module
 from degrau import deck, jobs, library, reading, review, sources
 from degrau.adapters.inbox import InboxError
 from degrau.library import ImportResult
@@ -22,6 +23,7 @@ from degrau.reading import ReadingError
 from degrau.review import ReviewError
 from degrau.store import database, texts
 from degrau.store import settings as settings_store
+from degrau.web import charts
 
 router = APIRouter()
 
@@ -376,4 +378,22 @@ def adaptation_status(request: Request, job_id: str, session: SessionDep) -> HTM
         failure=job.error,
         texts=reading.summaries(session),
         level=settings_store.get(session, settings_store.KEY_LEVEL),
+    )
+
+
+# --- the dashboard -------------------------------------------------------------
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+def dashboard_screen(request: Request, session: SessionDep) -> HTMLResponse:
+    """The numbers, the ladder, what was studied and what is coming."""
+    panel = dashboard_module.build(session)
+    return render(
+        request,
+        "dashboard.html",
+        tab="dashboard",
+        panel=panel,
+        history=charts.history_chart(panel),
+        retention=charts.retention_chart(panel),
+        chart=charts,
     )
