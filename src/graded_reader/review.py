@@ -27,7 +27,7 @@ from graded_reader.deck import DeckError, apply_card, card_state, load_card
 from graded_reader.lexicon import tokenize
 from graded_reader.store import reviews, words
 from graded_reader.store import settings as settings_store
-from graded_reader.store.models import Review, Word, utcnow
+from graded_reader.store.models import CardKind, Review, Word, utcnow
 
 #: What the reader sees where the word was. Long enough to look like a gap.
 BLANK = "____"
@@ -78,12 +78,29 @@ class QueueCounts(BaseModel):
         return max(0, self.daily_new_limit - self.introduced_today)
 
 
+class Segment(BaseModel):
+    """One piece of a sentence on the front of a card.
+
+    The target word is marked rather than hidden. Blanking it would make the
+    card a fill-in-the-gap exercise; the point of a sentence card is to read the
+    sentence and know what it means, with the word that earned its place made
+    visible so the eye goes there.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    text: str
+    whitespace: str
+    highlight: bool = False
+
+
 class ReviewCard(BaseModel):
-    """One card, as the review screen shows it."""
+    """One card, as the review screen shows it, of either kind."""
 
     model_config = ConfigDict(extra="forbid")
 
     word_id: int
+    kind: str = CardKind.WORD.value
     lemma: str
     display: str
     band: str = ""
@@ -91,13 +108,27 @@ class ReviewCard(BaseModel):
     example_en: str = ""
     example_pt: str = ""
     cloze: str = ""
+    sentence: str = ""
+    sentence_pt: str = ""
+    segments: list[Segment] = Field(default_factory=list)
     is_new: bool = False
     state: str = ""
     options: list[Option] = Field(default_factory=list)
 
     @property
+    def is_sentence(self) -> bool:
+        return self.kind == CardKind.SENTENCE.value
+
+    @property
     def has_example(self) -> bool:
         return bool(self.example_en.strip())
+
+    @property
+    def has_back(self) -> bool:
+        """Whether there is anything to reveal."""
+        if self.is_sentence:
+            return bool(self.sentence_pt.strip())
+        return bool(self.pt.strip() or self.example_en.strip())
 
 
 class GradeResult(BaseModel):
@@ -200,6 +231,23 @@ def blank_out(example: str, lemma: str) -> str:
     return "".join(pieces)
 
 
+def highlight(sentence: str, lemma: str) -> list[Segment]:
+    """The sentence in pieces, with every form of the target word marked.
+
+    The same lemma match the reading screen highlights with, so a word saved
+    from a text and the sentence it came from agree about which word is which.
+    """
+    target = lemma.strip().casefold()
+    return [
+        Segment(
+            text=token.text,
+            whitespace=token.whitespace,
+            highlight=bool(target) and token.is_word and token.lemma == target,
+        )
+        for token in tokenize(sentence)
+    ]
+
+
 def options_for(word: Word, *, now: datetime | None = None) -> list[Option]:
     """What each of the four buttons would cost, without applying anything."""
     moment = now or utcnow()
@@ -256,8 +304,10 @@ def to_card(word: Word, *, now: datetime | None = None) -> ReviewCard:
     """One word as the screen shows it."""
     if word.id is None:
         raise ReviewError("card has not been saved yet")
+    sentence = word.sentence or ""
     return ReviewCard(
         word_id=word.id,
+        kind=word.kind,
         lemma=word.lemma,
         display=word.display,
         band=word.band or "",
@@ -265,6 +315,9 @@ def to_card(word: Word, *, now: datetime | None = None) -> ReviewCard:
         example_en=word.example_en or "",
         example_pt=word.example_pt or "",
         cloze=blank_out(word.example_en or "", word.lemma),
+        sentence=sentence,
+        sentence_pt=word.sentence_pt or "",
+        segments=highlight(sentence, word.lemma) if sentence else [],
         is_new=word.state == "new",
         state=word.state,
         options=options_for(word, now=now),

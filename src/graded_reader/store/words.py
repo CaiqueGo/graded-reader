@@ -127,3 +127,11 @@ def for_export(
     if learned_only:
         statement = statement.where(col(Word.stability) >= MASTERED_STABILITY_DAYS)
     return list(session.exec(statement.order_by(col(Word.id))))
+
+
+def by_sentence(session: Session, sentence: str) -> Word | None:
+    """The sentence card with this exact text, if it is already in the deck."""
+    statement = (
+        select(Word).where(col(Word.kind) == "sentence").where(col(Word.sentence) == sentence)
+    )
+    return session.exec(statement).first()

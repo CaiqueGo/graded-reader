@@ -138,6 +138,39 @@ class ReadingView(BaseModel):
         return f"{self.coverage_pct * 100:.0f}% within {self.level}"
 
 
+class Excerpt(BaseModel):
+    """A stretch of text the reader selected, ready to become a card.
+
+    The words are listed so one of them can be picked as the target. Which word
+    a sentence is teaching is the reader's judgement -- the same sentence can be
+    mined for its verb, its preposition or its idiom, and only they know which
+    one sent them to select it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    text_id: int | None = None
+    words: list[WordChoice] = Field(default_factory=list)
+    already_saved: bool = False
+
+    @property
+    def word_count(self) -> int:
+        return len(self.text.split())
+
+
+class WordChoice(BaseModel):
+    """One candidate target inside a selected excerpt."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    lemma: str
+    display: str
+    band: str = ""
+    above_level: bool = False
+    in_deck: bool = False
+
+
 class WordCard(BaseModel):
     """The side panel for one clicked word."""
 
@@ -261,6 +294,49 @@ def _glossary_item(entry: dict[str, Any], in_deck: set[str]) -> GlossaryItem:
         example_pt=str(entry.get("example_pt", "")),
         lemma=lemma,
         in_deck=lemma in in_deck,
+    )
+
+
+def build_excerpt(session: Session, selection: str, *, text_id: int | None = None) -> Excerpt:
+    """Turn a selection into something the reader can turn into a card.
+
+    The excerpt is offered exactly as selected, whitespace flattened. Trimming
+    it to a sentence boundary would be second-guessing: a clause, an idiom or
+    half a line can each be the thing worth rehearsing.
+    """
+    from graded_reader.deck import normalise_sentence
+
+    cleaned = normalise_sentence(selection)
+    if not cleaned:
+        raise ReadingError("nothing selected")
+
+    row = texts.by_id(session, text_id) if text_id is not None else None
+    above = {entry.get("lemma", "") for entry in _loads(row.out_of_level)} if row else set()
+
+    seen: dict[str, WordChoice] = {}
+    for token in tokenize(cleaned):
+        if not token.is_word or token.is_na or token.lemma in seen:
+            continue
+        seen[token.lemma] = WordChoice(
+            lemma=token.lemma,
+            display=token.text,
+            band=band_for(token.lemma)[0].value,
+            above_level=token.lemma in above,
+        )
+
+    in_deck = words.lemmas_in(session, set(seen))
+    choices = [
+        choice.model_copy(update={"in_deck": choice.lemma in in_deck}) for choice in seen.values()
+    ]
+    # The words the text itself flagged as above level come first: those are the
+    # ones the reader is most likely to have selected the sentence for.
+    choices.sort(key=lambda choice: (not choice.above_level, choice.lemma))
+
+    return Excerpt(
+        text=cleaned,
+        text_id=text_id,
+        words=choices,
+        already_saved=words.by_sentence(session, cleaned) is not None,
     )
 
 

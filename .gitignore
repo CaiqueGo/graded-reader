@@ -12,5 +12,7 @@ build/
 
 # Banco local e material de estudo: nao vao para o git.
 graded-reader.db
+# Copias que a migracao deixa antes de mexer no baralho.
+graded-reader.db.*.backup
 inbox/
 graded-reader-anki.csv

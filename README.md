@@ -121,6 +121,33 @@ poder consertar a forma base é a mitigação que ele pede. Corrigir o lema não
 mexe no agendamento: é o mesmo cartão. Renomear para um lema que já existe é
 recusado, porque fundir dois históricos é decisão sua, não do app.
 
+## Cartões de frase
+
+Uma palavra sozinha é ambígua e fácil de "saber" sem conseguir usar. Por isso o
+baralho aceita dois tipos de cartão, e o segundo é o que a maioria de quem estuda
+com repetição espaçada realmente usa:
+
+- **Cartão de palavra** — a palavra na frente, tradução e exemplo atrás. É o que
+  nasce ao clicar uma palavra no texto.
+- **Cartão de frase** — a frase na frente, com a palavra que ela ensina
+  **destacada**, e o sentido atrás. Nasce ao **selecionar um trecho com o mouse**
+  durante a leitura: aparece um botão junto da seleção, você escolhe qual palavra
+  do trecho é o alvo, escreve o que a frase quer dizer, e pronto.
+
+A palavra-alvo é **marcada, não apagada**. Apagá-la transformaria o cartão num
+exercício de completar lacuna; o ponto de um cartão de frase é ler a frase e
+saber o que ela diz, com a palavra que a fez valer a pena em evidência.
+
+O recorte é o que você selecionou, sem ajuste — uma oração, uma expressão ou meia
+linha podem ser a coisa que vale ensaiar, e cortar na fronteira da frase seria
+adivinhar por você. Na hora de escolher o alvo, as palavras que o texto marcou
+como acima do seu nível aparecem primeiro: são as que provavelmente levaram você
+a selecionar aquilo.
+
+Nada disso mexe nos cartões de palavra que você já tem. Os dois convivem na mesma
+fila e no mesmo arquivo do Anki, onde a tag diz qual é qual (`graded-reader word`
+e `graded-reader sentence`) para você poder dar ajustes diferentes a cada tipo.
+
 A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. As
 palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
 `machine` destaca `machines`. O texto original fica a um clique, na aba ao lado.

@@ -173,19 +173,69 @@ def test_accented_text_is_preserved() -> None:
 # --- tags -------------------------------------------------------------------------
 
 
-def test_the_tags_are_the_source_and_the_band() -> None:
+def test_the_tags_are_the_source_the_kind_and_the_band() -> None:
+    """The kind rides along so Anki can give the two of them different settings."""
     note = anki.build_note(card(band="A2"))
-    assert note.tags == "graded-reader A2"
+    assert note.tags == "graded-reader word A2"
+
+
+def test_a_sentence_card_is_tagged_as_one() -> None:
+    note = anki.build_note(sentence_card())
+    assert note.tags == "graded-reader sentence B1"
 
 
 def test_a_card_with_no_band_still_carries_the_source_tag() -> None:
-    assert anki.build_note(card(band="")).tags == "graded-reader"
+    assert anki.build_note(card(band="")).tags == "graded-reader word"
 
 
 def test_a_tag_containing_a_space_is_joined_rather_than_split() -> None:
     """Spaces separate tags, so one with a space in it would become two."""
     note = anki.build_note(card(), extra_tags=["from a text"])
-    assert note.tags == "graded-reader B1 from-a-text"
+    assert note.tags == "graded-reader word B1 from-a-text"
+
+
+# --- sentence cards ----------------------------------------------------------------
+
+
+def sentence_card(**fields: object) -> deck.SavedWord:
+    frase = "They put the water deep under a rock."
+    base: dict[str, object] = {
+        "kind": "sentence",
+        "lemma": "rock",
+        "display": frase,
+        "band": "B1",
+        "sentence": frase,
+        "sentence_pt": "Eles puseram a agua bem fundo, sob uma rocha.",
+        "due": NOW,
+        "state": "new",
+    }
+    return deck.SavedWord.model_validate({**base, **fields})
+
+
+def test_a_sentence_card_puts_the_sentence_on_the_front() -> None:
+    """Exporting the word instead would ship a different card than the one studied."""
+    _headers, rows = parse(anki.render([anki.build_note(sentence_card())]))
+    assert rows[0][0] == "They put the water deep under a rock."
+    assert rows[0][1] == "Eles puseram a agua bem fundo, sob uma rocha."
+
+
+def test_a_sentence_card_carries_no_italics_wrapper() -> None:
+    """The back is the meaning, not an example beneath a translation."""
+    note = anki.build_note(sentence_card())
+    assert "<i>" not in note.back
+
+
+def test_a_sentence_saved_without_a_meaning_exports_with_an_empty_back() -> None:
+    note = anki.build_note(sentence_card(sentence_pt=""))
+    assert note.back == ""
+    assert not note.usable
+
+
+def test_a_sentence_with_a_comma_still_makes_one_row() -> None:
+    long_one = "When it rains, the water goes under the rock."
+    _headers, rows = parse(anki.render([anki.build_note(sentence_card(sentence=long_one))]))
+    assert len(rows[0]) == 3
+    assert rows[0][0] == long_one
 
 
 # --- end to end -------------------------------------------------------------------

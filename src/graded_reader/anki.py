@@ -34,7 +34,8 @@ from pydantic import BaseModel, ConfigDict
 from graded_reader.deck import SavedWord
 
 #: The tag every note carries, so the whole import can be found or undone in
-#: Anki with one search.
+#: Anki with one search. The kind rides beside it, because word cards and
+#: sentence cards want different review settings and a tag is how Anki filters.
 SOURCE_TAG = "graded-reader"
 
 #: Anki reads the first field to decide whether a note is a duplicate. Ours is
@@ -89,7 +90,7 @@ def tags_for(word: SavedWord, extra: Sequence[str] = ()) -> str:
     Spaces separate tags, so a tag cannot contain one. Anything that arrives
     with a space in it is joined up rather than silently becoming two tags.
     """
-    parts = [SOURCE_TAG]
+    parts = [SOURCE_TAG, word.kind]
     if word.band:
         parts.append(word.band)
     parts.extend(extra)
@@ -99,10 +100,20 @@ def tags_for(word: SavedWord, extra: Sequence[str] = ()) -> str:
 def build_note(word: SavedWord, *, extra_tags: Sequence[str] = ()) -> Note:
     """One card as Anki will see it.
 
-    The back is the translation, then the example sentence in italics on its own
-    line -- the shape section 12 asks for. A card missing one of the two keeps
-    the other rather than carrying a stray separator.
+    A word card puts the word on the front, and on the back its translation
+    followed by the example in italics -- the shape section 12 asks for. A
+    sentence card puts the sentence on the front and what it means on the back,
+    because on that kind the sentence *is* the card. Exporting one with the word
+    on the front would hand Anki a different card from the one being studied
+    here, and the schedule would stop matching what it schedules.
     """
+    if word.is_sentence:
+        return Note(
+            term=to_field(word.sentence or word.display),
+            back=to_field(word.sentence_pt),
+            tags=tags_for(word, extra_tags),
+        )
+
     translation = to_field(word.pt)
     example = to_field(word.example_en)
 

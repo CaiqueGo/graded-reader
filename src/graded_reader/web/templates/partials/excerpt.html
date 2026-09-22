@@ -1,0 +1,36 @@
+{# What the reader selected, one step away from being a card. #}
+<div class="excerpt">
+  <p class="excerpt-label">Selected &mdash; {{ excerpt.word_count }} words</p>
+  <p class="excerpt-text">{{ excerpt.text }}</p>
+
+  {% if excerpt.already_saved %}
+  <p class="saved">This sentence is already in your deck.</p>
+  {% else %}
+  <form hx-post="/sentences" hx-target="#card" hx-swap="innerHTML">
+    <input type="hidden" name="sentence" value="{{ excerpt.text }}">
+    {% if excerpt.text_id %}<input type="hidden" name="text_id" value="{{ excerpt.text_id }}">{% endif %}
+
+    {% if excerpt.words %}
+    <label for="excerpt-target">Which word is it teaching?</label>
+    <select id="excerpt-target" name="target">
+      <option value="">none in particular</option>
+      {% for choice in excerpt.words %}
+      <option value="{{ choice.lemma }}">
+        {{ choice.lemma }} &middot; {{ choice.band }}{% if choice.above_level %} &middot; above level{% endif %}{% if choice.in_deck %} &middot; in deck{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+    <p class="field-hint">Marked on the front of the card, not hidden. Words the
+      text flagged as above your level are listed first.</p>
+    {% endif %}
+
+    <label for="excerpt-pt">What does it mean?</label>
+    <textarea id="excerpt-pt" name="pt" rows="3"
+              placeholder="A tradução, ou o sentido com suas palavras."></textarea>
+    <p class="field-hint">This is the back of the card. You can leave it empty
+      and fill it in later from the review screen.</p>
+
+    <button class="save" type="submit">Save sentence</button>
+  </form>
+  {% endif %}
+</div>

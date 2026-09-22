@@ -416,3 +416,40 @@ def export_csv(session: SessionDep) -> PlainTextResponse:
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": 'attachment; filename="graded-reader-anki.csv"'},
     )
+
+
+# --- mining a sentence ----------------------------------------------------------
+
+
+@router.post("/excerpt", response_class=HTMLResponse)
+def excerpt_panel(
+    request: Request,
+    session: SessionDep,
+    selection: Annotated[str, Form(min_length=1, max_length=2000)],
+    text_id: Annotated[int | None, Form()] = None,
+) -> HTMLResponse:
+    """What the reader just selected, offered as a card to be."""
+    try:
+        excerpt = reading.build_excerpt(session, selection, text_id=text_id)
+    except ReadingError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(request, "partials/excerpt.html", excerpt=excerpt)
+
+
+@router.post("/sentences", response_class=HTMLResponse)
+def save_sentence(
+    request: Request,
+    session: SessionDep,
+    sentence: Annotated[str, Form(min_length=1, max_length=2000)],
+    target: Annotated[str, Form(max_length=80)] = "",
+    pt: Annotated[str, Form(max_length=2000)] = "",
+    text_id: Annotated[int | None, Form()] = None,
+) -> HTMLResponse:
+    """Put the selected sentence in the deck."""
+    try:
+        card, created = deck.save_sentence(
+            session, sentence, target=target, pt=pt, first_text_id=text_id
+        )
+    except deck.DeckError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(request, "partials/saved_sentence.html", card=card, created=created)

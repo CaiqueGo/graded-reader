@@ -60,7 +60,45 @@
   {% endif %}
 </article>
 
+<form id="mine" class="mine" hx-post="/excerpt" hx-target="#card" hx-swap="innerHTML" hidden>
+  <input type="hidden" name="selection">
+  <input type="hidden" name="text_id" value="{{ view.id }}">
+  <button class="primary" type="submit">Save this sentence</button>
+</form>
+
 <script>
+  /* Selecting text offers it as a card. A word alone is ambiguous and easy to
+     "know" without being able to use; the sentence is what gets rehearsed. The
+     button follows the selection rather than sitting in a toolbar, so the hand
+     is already where it needs to be. */
+  (function () {
+    const form = document.querySelector('#mine');
+    const field = form.querySelector('[name=selection]');
+
+    function insideText(selection) {
+      const pane = document.querySelector('#pane');
+      if (!pane || selection.rangeCount === 0) return false;
+      return pane.contains(selection.getRangeAt(0).commonAncestorContainer);
+    }
+
+    document.addEventListener('selectionchange', function () {
+      const selection = document.getSelection();
+      const text = selection ? selection.toString().trim() : '';
+      if (!text || text.split(/\s+/).length < 2 || !insideText(selection)) {
+        form.hidden = true;
+        return;
+      }
+      field.value = text;
+      const box = selection.getRangeAt(0).getBoundingClientRect();
+      form.style.top = (window.scrollY + box.bottom + 8) + 'px';
+      form.style.left = (window.scrollX + box.left) + 'px';
+      form.hidden = false;
+    });
+
+    /* Clicking the button must not clear what it is about to send. */
+    form.addEventListener('mousedown', function (event) { event.preventDefault(); });
+  })();
+
   function pickSwitch(button) {
     for (const other of button.parentElement.querySelectorAll('.switch-btn')) {
       other.classList.remove('is-active');

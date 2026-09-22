@@ -1,0 +1,12 @@
+<div class="sidecard-body">
+  <p class="saved">{% if created %}Saved as a sentence card.{% else %}That sentence was already in your deck.{% endif %}</p>
+  <p class="excerpt-text">{{ card.sentence }}</p>
+  {% if card.lemma %}
+  <p class="sidecard-sub">
+    teaching <strong>{{ card.lemma }}</strong>
+    {% if card.band %}<span class="pill band-{{ card.band }}">{{ card.band }}</span>{% endif %}
+  </p>
+  {% endif %}
+  {% if card.sentence_pt %}<p class="sidecard-pt">{{ card.sentence_pt }}</p>
+  {% else %}<p class="card-thin">No meaning written yet &mdash; add it when it comes up in review.</p>{% endif %}
+</div>
