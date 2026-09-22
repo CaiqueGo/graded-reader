@@ -15,8 +15,11 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from degrau import __version__
+from degrau import __version__, config, library
 from degrau.lexicon import Band, CoverageReport, LexiconError, coverage
+from degrau.library import ImportAction, ImportResult
+from degrau.profile import DEFAULT_NEW_WORDS, ProfileError, render
+from degrau.store import database, texts
 
 app = typer.Typer(
     help="degrau -- a graded English reader with its own flashcards.",
@@ -137,6 +140,126 @@ def analyze(
             f"{report.coverage_pct * 100:.1f}% < {report.threshold * 100:.0f}%"
         )
         sys.exit(1)
+
+
+def _coverage_label(pct: float | None) -> str:
+    return "-" if pct is None else f"{pct * 100:.1f}%"
+
+
+def _print_import(result: ImportResult) -> None:
+    colours = {
+        ImportAction.IMPORTED: "green",
+        ImportAction.DUPLICATE: "dim",
+        ImportAction.REJECTED: "red",
+    }
+    colour = colours[result.action]
+    line = f"[{colour}]{result.action.value:>9}[/{colour}]  {result.source}"
+    if result.action is ImportAction.IMPORTED:
+        flag = "" if result.meets_threshold else "  [yellow]below threshold[/yellow]"
+        line += (
+            f"  -> text {result.text_id}  {result.level}  "
+            f"{_coverage_label(result.coverage_pct)} covered  "
+            f"{result.out_of_level_count} above level{flag}"
+        )
+    elif result.reason:
+        line += f"  ({result.reason})"
+    console.print(line)
+
+
+@app.command("import")
+def import_inbox(
+    file: Annotated[
+        Path | None,
+        typer.Argument(help="One file to import. Omit to drain the whole inbox."),
+    ] = None,
+) -> None:
+    """Validate, measure and store the adapted texts waiting in the inbox.
+
+    A file that does not match the contract is moved to inbox/rejected/ with a
+    .error.txt beside it saying why -- never deleted. Importing the same text
+    twice is a no-op, so re-running this is always safe.
+
+    Exits with code 1 if anything was rejected, which is what lets /adapt know.
+    """
+    results = [library.import_file(file)] if file is not None else library.import_inbox()
+
+    if not results:
+        console.print(
+            f"[yellow]nothing waiting[/yellow] in {config.inbox_dir()} -- "
+            "run /adapt in Claude Code first."
+        )
+        return
+
+    for result in results:
+        _print_import(result)
+
+    rejected = [result for result in results if result.action is ImportAction.REJECTED]
+    imported = [result for result in results if result.action is ImportAction.IMPORTED]
+    console.print(
+        f"\n{len(imported)} imported, "
+        f"{len(results) - len(imported) - len(rejected)} duplicate, "
+        f"{len(rejected)} rejected"
+    )
+    if rejected:
+        error_console.print(
+            f"[red]{len(rejected)} file(s) rejected[/red] in {config.rejected_dir()}"
+        )
+        sys.exit(1)
+
+
+@app.command()
+def profile(
+    level: Annotated[
+        Band | None,
+        typer.Option("--level", "-l", help="Target level. Defaults to the stored one."),
+    ] = None,
+    new_words: Annotated[
+        int, typer.Option("--new-words", help="How many words to teach (5 to 8).")
+    ] = DEFAULT_NEW_WORDS,
+) -> None:
+    """Print the context block to paste into an adaptation prompt.
+
+    This is what /adapt runs first. It carries your vocabulary, not the level's
+    word list: the model already knows which English words are frequent, and
+    does not know which ones you have earned.
+    """
+    try:
+        built = library.build_profile(level, new_words=new_words)
+    except (ProfileError, LexiconError) as error:
+        error_console.print(f"[red]error:[/red] {error}")
+        raise typer.Exit(code=1) from error
+    # print, not console.print: this output is piped into a prompt, and rich
+    # would wrap it to the terminal width and add markup nobody asked for.
+    sys.stdout.write(render(built) + "\n")
+
+
+@app.command("texts")
+def list_texts(
+    limit: Annotated[int, typer.Option("--limit", help="How many to show.")] = 20,
+) -> None:
+    """List the imported texts, most recent first."""
+    with database.session() as active:
+        rows = texts.recent(active, limit=limit)
+        table = Table(title=f"Library ({texts.count(active)} texts)")
+        table.add_column("id", justify="right", style="cyan")
+        table.add_column("level")
+        table.add_column("title")
+        table.add_column("covered", justify="right")
+        table.add_column("imported")
+        for row in rows:
+            table.add_row(
+                str(row.id),
+                row.level,
+                row.title or "(untitled)",
+                _coverage_label(row.coverage_pct),
+                # Stored in UTC, read by a person sitting in one timezone.
+                row.created_at.astimezone().strftime("%Y-%m-%d %H:%M"),
+            )
+
+    if not rows:
+        console.print("[yellow]library empty[/yellow] -- use 'degrau import'.")
+        return
+    console.print(table)
 
 
 if __name__ == "__main__":

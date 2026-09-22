@@ -17,7 +17,7 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 | Etapa | O que entrega | Status |
 |---|---|---|
 | M0 | Léxico: bandas, lematização, cobertura, `degrau analyze` | pronto |
-| M1 | O laço fechado via terminal: banco, `profile`, importador | a fazer |
+| M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
 | M2 | Leitura na web | a fazer |
 | M3 | Revisão com FSRS | a fazer |
 | M4 | Painel | a fazer |
@@ -27,20 +27,34 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 
 ```
 uv venv --python 3.11
-uv pip install -e ".[lexicon,dev]"
+uv pip install -e ".[lexicon,db,dev]"
 python -m spacy download en_core_web_sm
 ```
 
-Medir um texto contra um nível:
+O laço normal é o comando de barra, dentro do Claude Code neste repositório:
 
 ```
-degrau analyze exemplo/iceland-a1.txt --level A1
+/adapt A1 materia.txt
 ```
 
-Sai com código 1 quando o texto não alcança o limiar do nível — é isso que permite
-ao laço de adaptação saber que precisa tentar de novo. Aceita `-` para ler da
-entrada padrão, e `--known arquivo.txt` (um lema por linha) para descontar o que
-você já sabe da lista de candidatos a cartão.
+Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
+`degrau import` e reporta a cobertura. Os comandos por trás dele, se quiser rodar
+à mão:
+
+| Comando | O que faz |
+|---|---|
+| `degrau profile --level A1` | Imprime o bloco de contexto para o prompt de adaptação |
+| `degrau import` | Valida, mede e grava o que está no `inbox/` |
+| `degrau texts` | Lista o que já entrou |
+| `degrau analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
+
+`analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
+ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
+`--known arquivo.txt` (um lema por linha).
+
+`import` nunca apaga a sua entrada: arquivo inválido vai para `inbox/rejected/`
+com um `.error.txt` ao lado dizendo o motivo, e reimportar o mesmo texto não
+duplica (a identidade é o hash do inglês adaptado).
 
 Os portões, na ordem em que valem:
 
@@ -70,5 +84,9 @@ aos testes rodarem contra um diretório temporário sem tocar nas listas reais.
   por Browne, Culligan e Phillips. Licença **CC BY-SA 4.0**. O arquivo publicado
   é o `NGSL_12_stats.csv`, guardado aqui sem alteração.
 - `data/bands.toml` — os cortes de banda e os limiares de cobertura.
+- `data/levels.toml` — o orçamento gramatical de cada nível, citado no prompt.
+
+O banco é um arquivo SQLite (`degrau.db`, sobrescrevível por `DEGRAU_DB`) e o
+`inbox/` por `DEGRAU_INBOX_DIR`. Nenhum dos dois vai para o git.
 
 Frequência fora da NGSL vem do [wordfreq](https://pypi.org/project/wordfreq/).

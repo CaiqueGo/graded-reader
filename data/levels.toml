@@ -1,0 +1,67 @@
+# What each level is allowed to use.
+#
+# This table is quoted verbatim into the adaptation prompt. It is the part the
+# model is bad at guessing: it has a good sense of which words are frequent in
+# English, and a poor sense of how long an A2 sentence is allowed to be.
+#
+# Keep each entry short. A prompt section nobody reads to the end is a prompt
+# section the model skims too.
+
+[A1]
+vocabulary = "The most frequent 500 words of English, plus the exceptions listed below."
+sentences = "6 to 10 words. One clause. No subordination."
+grammar = """
+Present simple, present continuous, past simple of the most common verbs.
+can / cannot, there is / there are, going to for the future.
+No passive voice, no perfect tenses, no conditionals, no relative clauses."""
+guidance = """
+Say one thing per sentence. Repeat the noun instead of using a pronoun when the
+pronoun could point at two things. Prefer a short common word to a precise rare
+one."""
+
+[A2]
+vocabulary = "The most frequent 1000 words, plus the exceptions listed below."
+sentences = "8 to 14 words. Two clauses at most, joined by and, but, so, because."
+grammar = """
+Everything from A1, plus past continuous, present perfect for experience,
+comparatives and superlatives, will for the future, simple purpose with to.
+Still no passive voice and no conditionals beyond 'if' plus present."""
+guidance = """
+A paragraph may carry one idea and its consequence. Time expressions help more
+than connectives here: 'in two years', 'after that', 'every day'."""
+
+[B1]
+vocabulary = "The most frequent 2000 words, plus the exceptions listed below."
+sentences = "12 to 20 words. Subordination is allowed."
+grammar = """
+Everything from A2, plus the passive voice, relative clauses, first and second
+conditionals, reported speech, present perfect continuous, modals of deduction."""
+guidance = """
+The text can now hold an argument across a paragraph instead of a chain of
+facts. Abstract nouns are allowed if they are frequent ones."""
+
+[B2]
+vocabulary = "The most frequent 2800 words, plus the exceptions listed below."
+sentences = "15 to 25 words. Varied length on purpose."
+grammar = """
+Everything from B1, plus third conditional, mixed conditionals, wider range of
+modals, participle clauses, more varied linking."""
+guidance = """
+Nuance and hedging become available: 'tends to', 'is likely to', 'broadly'.
+Idiom is allowed when it is transparent."""
+
+[C1]
+vocabulary = "Unrestricted, but avoid the genuinely rare and the technical."
+sentences = "Whatever the argument needs."
+grammar = "Unrestricted."
+guidance = """
+Keep the register consistent. The adaptation work at this level is about
+structure and clarity, not about the word list."""
+
+[C2]
+vocabulary = "Unrestricted."
+sentences = "Whatever the argument needs."
+grammar = "Unrestricted."
+guidance = """
+At this level adaptation mostly means trimming: the original is usually already
+appropriate, and the value is in cutting what does not carry the argument."""
