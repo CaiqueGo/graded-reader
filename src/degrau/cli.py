@@ -262,5 +262,33 @@ def list_texts(
     console.print(table)
 
 
+@app.command()
+def serve(
+    host: Annotated[str, typer.Option("--host", help="Interface to bind.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", help="Port to listen on.")] = 8000,
+    reload: Annotated[bool, typer.Option("--reload", help="Restart on code changes.")] = False,
+) -> None:
+    """Start the reading interface.
+
+    Binds to localhost by default and should stay there. There is no
+    authentication in this app by design, so anything that can reach the port
+    can read and change the deck.
+    """
+    try:
+        import uvicorn
+    except ImportError:
+        error_console.print("[red]error:[/red] web extras missing. Run: uv pip install -e '.[web]'")
+        raise typer.Exit(code=1) from None
+
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        error_console.print(
+            f"[yellow]warning:[/yellow] binding to {host}, which is not localhost. "
+            "This app has no authentication."
+        )
+
+    console.print(f"reading at [cyan]http://{host}:{port}[/cyan]  (ctrl-c to stop)")
+    uvicorn.run("degrau.web.app:app", host=host, port=port, reload=reload, log_level="warning")
+
+
 if __name__ == "__main__":
     app()

@@ -42,7 +42,15 @@ class SourceKind(StrEnum):
 
 
 class CardState(StrEnum):
-    """FSRS card state, denormalised out of ``Word.fsrs_json`` for querying."""
+    """Card state, denormalised out of ``Word.fsrs_json`` for querying.
+
+    ``NEW`` is ours, not the library's. fsrs 6 has only Learning, Review and
+    Relearning: a freshly created card is already Learning, due immediately. But
+    "created and never graded" is a distinct thing the app has to count, because
+    the daily new-card limit is a limit on exactly those, and once a card has
+    been graded once it never returns to it. It is derived from the card's
+    ``last_review`` being unset, never from the library's own state.
+    """
 
     NEW = "new"
     LEARNING = "learning"

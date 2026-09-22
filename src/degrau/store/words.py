@@ -60,3 +60,20 @@ def due_within(session: Session, days: int, *, now: datetime | None = None) -> l
 
 def count(session: Session) -> int:
     return len(list(session.exec(select(Word.id))))
+
+
+def by_lemma(session: Session, lemma: str) -> Word | None:
+    """The card for a lemma, if it is in the deck."""
+    return session.exec(select(Word).where(Word.lemma == lemma)).first()
+
+
+def lemmas_in(session: Session, lemmas: set[str]) -> set[str]:
+    """Which of ``lemmas`` are already in the deck.
+
+    One query instead of one per word: the reading screen asks this about every
+    distinct word of a text at once, and doing it word by word is how a page
+    that renders in 20ms starts taking a second.
+    """
+    if not lemmas:
+        return set()
+    return set(session.exec(select(Word.lemma).where(col(Word.lemma).in_(lemmas))))

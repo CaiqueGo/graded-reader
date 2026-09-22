@@ -1,0 +1,22 @@
+{% if view.glossary %}
+<div class="glossary-head">
+  <h2 class="section-title">Glossary</h2>
+  <form hx-post="/texts/{{ view.id }}/glossary"
+        hx-target="#glossary-section" hx-swap="innerHTML">
+    <button class="save-all" type="submit">Save all</button>
+  </form>
+</div>
+<dl class="glossary">
+  {% for item in view.glossary %}
+  <div class="glossary-item{% if item.in_deck %} in-deck{% endif %}">
+    <dt>{{ item.en }}{% if item.in_deck %} <span class="tick">in deck</span>{% endif %}</dt>
+    <dd>
+      <span class="glossary-pt">{{ item.pt }}</span>
+      {% if item.example_en %}<span class="glossary-example">{{ item.example_en }}</span>{% endif %}
+    </dd>
+  </div>
+  {% endfor %}
+</dl>
+{% else %}
+<p class="hint">This text came without a glossary.</p>
+{% endif %}

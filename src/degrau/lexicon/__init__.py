@@ -6,7 +6,7 @@ HTTP, the database or the CLI.
 
 from __future__ import annotations
 
-from degrau.lexicon.analysis import coverage, lemmatize, nlp
+from degrau.lexicon.analysis import Token, coverage, lemmatize, nlp, tokenize
 from degrau.lexicon.bands import BandTable, LexiconError, band_for, load_bands, load_ngsl
 from degrau.lexicon.models import (
     LEVELS,
@@ -24,6 +24,7 @@ __all__ = [
     "BandTable",
     "CoverageReport",
     "LexiconError",
+    "Token",
     "WordCount",
     "band_for",
     "coverage",
@@ -34,4 +35,5 @@ __all__ = [
     "load_ngsl",
     "nlp",
     "parse_level",
+    "tokenize",
 ]

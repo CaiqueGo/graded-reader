@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Degrau - Library{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Library</h1>
+
+{% if texts %}
+<ul class="library">
+  {% for item in texts %}
+  <li class="library-item">
+    <a class="library-link" href="/texts/{{ item.id }}">
+      <span class="library-level band-{{ item.level }}">{{ item.level }}</span>
+      <span class="library-title">{{ item.title }}</span>
+      <span class="library-meta">
+        {% if item.coverage_pct is not none %}
+          {{ "%.0f"|format(item.coverage_pct * 100) }}% within {{ item.level }}
+          &middot; {{ item.out_of_level_count }} above
+        {% else %}
+          not measured
+        {% endif %}
+        &middot; {{ item.created_at }}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty">
+  <p>Nothing imported yet.</p>
+  <p class="hint">Run <code>/adapt A1 &lt;file&gt;</code> in Claude Code, then <code>degrau import</code>.</p>
+</div>
+{% endif %}
+{% endblock %}

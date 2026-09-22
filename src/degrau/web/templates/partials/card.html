@@ -1,0 +1,27 @@
+<div class="sidecard-body">
+  <p class="sidecard-lemma">{{ card.display }}</p>
+  <p class="sidecard-sub">
+    <span class="pill band-{{ card.band }}">{{ card.band }}</span>
+    <span class="sidecard-base">{{ card.lemma }}</span>
+  </p>
+
+  {% if card.pt %}<p class="sidecard-pt">{{ card.pt }}</p>{% endif %}
+  {% if card.example_en %}
+  <p class="sidecard-example">{{ card.example_en }}</p>
+  {% if card.example_pt %}<p class="sidecard-example-pt">{{ card.example_pt }}</p>{% endif %}
+  {% endif %}
+
+  {% if card.in_deck %}
+  <p class="saved">{% if just_saved %}Saved.{% else %}Already in your deck.{% endif %}</p>
+  {% else %}
+  <form hx-post="/words" hx-target="#card" hx-swap="innerHTML">
+    <input type="hidden" name="lemma" value="{{ card.lemma }}">
+    <input type="hidden" name="display" value="{{ card.display }}">
+    <input type="hidden" name="pt" value="{{ card.pt }}">
+    <input type="hidden" name="example_en" value="{{ card.example_en }}">
+    <input type="hidden" name="example_pt" value="{{ card.example_pt }}">
+    {% if card.text_id %}<input type="hidden" name="text_id" value="{{ card.text_id }}">{% endif %}
+    <button class="save" type="submit">Save to deck</button>
+  </form>
+  {% endif %}
+</div>

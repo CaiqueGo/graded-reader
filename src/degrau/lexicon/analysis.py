@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
@@ -86,32 +87,70 @@ def _is_acronym(text: str) -> bool:
     return len(text) > 1 and text.isupper() and any(char.isalpha() for char in text)
 
 
-def lemmatize(text: str) -> list[tuple[str, str, bool]]:
-    """Split a text into ``(lemma, display, is_na)``, in order of appearance.
+@dataclass(frozen=True)
+class Token:
+    """One piece of a text, carrying enough to put the text back together.
 
-    Punctuation and whitespace are dropped: they are not words and counting them
-    would quietly inflate every denominator in the report.
+    ``whitespace`` is what followed the token in the original. Keeping it is what
+    lets the reading view rebuild the text exactly -- paragraph breaks, double
+    spaces and all -- while wrapping each word in something clickable. Rendering
+    from a list of words instead would quietly reformat the author's text.
     """
-    tokens: list[tuple[str, str, bool]] = []
+
+    text: str
+    whitespace: str
+    lemma: str = ""
+    is_na: bool = False
+
+    @property
+    def is_word(self) -> bool:
+        """Whether this token carries vocabulary, clickable or countable."""
+        return bool(self.lemma)
+
+
+def tokenize(text: str) -> list[Token]:
+    """Every token of a text, in order, including punctuation and whitespace.
+
+    ``"".join(token.text + token.whitespace for token in tokenize(t)) == t``.
+    That property is the whole point: it is the single classification of what
+    counts as a word, shared by the coverage maths and the reading screen, so
+    the two can never disagree about which words are highlighted.
+    """
+    tokens: list[Token] = []
     for token in nlp()(text):
+        surface: str = token.text
+        trailing: str = token.whitespace_
+
         if token.is_space or token.is_punct:
+            tokens.append(Token(text=surface, whitespace=trailing))
             continue
 
-        surface: str = token.text
         if (
             token.pos_ in _NA_POS
             or token.ent_type_ in _NA_ENTS
             or token.like_num
             or _is_acronym(surface)
         ):
-            tokens.append((surface.casefold(), surface, True))
+            tokens.append(
+                Token(text=surface, whitespace=trailing, lemma=surface.casefold(), is_na=True)
+            )
             continue
 
         lemma: str = token.lemma_.strip().casefold()
         if not lemma or not any(char.isalpha() for char in lemma):
+            tokens.append(Token(text=surface, whitespace=trailing))
             continue
-        tokens.append((lemma, surface, False))
+        tokens.append(Token(text=surface, whitespace=trailing, lemma=lemma))
     return tokens
+
+
+def lemmatize(text: str) -> list[tuple[str, str, bool]]:
+    """Split a text into ``(lemma, display, is_na)``, in order of appearance.
+
+    Punctuation and whitespace are dropped: they are not words and counting them
+    would quietly inflate every denominator in the report.
+    """
+    return [(token.lemma, token.text, token.is_na) for token in tokenize(text) if token.is_word]
 
 
 def coverage(

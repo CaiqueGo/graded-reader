@@ -18,7 +18,7 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 |---|---|---|
 | M0 | Léxico: bandas, lematização, cobertura, `degrau analyze` | pronto |
 | M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
-| M2 | Leitura na web | a fazer |
+| M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
 | M3 | Revisão com FSRS | a fazer |
 | M4 | Painel | a fazer |
 | M5 | Exportação para o Anki | a fazer |
@@ -27,7 +27,7 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 
 ```
 uv venv --python 3.11
-uv pip install -e ".[lexicon,db,dev]"
+uv pip install -e ".[lexicon,db,srs,web,dev]"
 python -m spacy download en_core_web_sm
 ```
 
@@ -47,10 +47,19 @@ Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
 | `degrau import` | Valida, mede e grava o que está no `inbox/` |
 | `degrau texts` | Lista o que já entrou |
 | `degrau analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
+| `degrau serve` | Sobe a interface de leitura em http://127.0.0.1:8000 |
 
 `analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
 ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
 `--known arquivo.txt` (um lema por linha).
+
+A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. As
+palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
+`machine` destaca `machines`. O texto original fica a um clique, na aba ao lado.
+
+`degrau serve` escuta só em localhost, e deve continuar assim: **não há
+autenticação nenhuma neste app**, por decisão do MVP. Qualquer um que alcance a
+porta lê e altera o baralho.
 
 `import` nunca apaga a sua entrada: arquivo inválido vai para `inbox/rejected/`
 com um `.error.txt` ao lado dizendo o motivo, e reimportar o mesmo texto não

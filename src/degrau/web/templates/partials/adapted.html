@@ -1,0 +1,16 @@
+{# The adapted text, one <p> per paragraph. Rendered token by token so every
+   word carries its lemma -- see lexicon.tokenize and reading.split_paragraphs. #}
+<div class="prose">
+  {%- for paragraph in view.paragraphs %}
+  <p>{% for token in paragraph -%}
+{%- if token.clickable -%}
+<span class="w{% if token.in_deck %} in-deck{% endif %}{% if token.above_level %} above{% endif %}"
+      hx-get="/card?lemma={{ token.lemma|urlencode }}&amp;text_id={{ view.id }}"
+      hx-target="#card" hx-swap="innerHTML">{{ token.text }}</span>
+{%- else -%}
+{{ token.text }}
+{%- endif -%}
+{{ token.whitespace }}
+{%- endfor %}</p>
+  {%- endfor %}
+</div>
