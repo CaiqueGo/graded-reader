@@ -77,3 +77,8 @@ def lemmas_in(session: Session, lemmas: set[str]) -> set[str]:
     if not lemmas:
         return set()
     return set(session.exec(select(Word.lemma).where(col(Word.lemma).in_(lemmas))))
+
+
+def by_id(session: Session, word_id: int) -> Word | None:
+    """One card by its id."""
+    return session.get(Word, word_id)

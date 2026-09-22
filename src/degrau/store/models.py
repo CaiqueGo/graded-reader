@@ -114,11 +114,19 @@ class Word(SQLModel, table=True):
 
 
 class Review(SQLModel, table=True):
-    """One grading of one card. Never deleted.
+    """One grading of one card.
 
-    Every number on the dashboard is derived from this table. Deleting a row
-    here would rewrite history that the retention curve is fitted to, so nothing
-    in the project ever does.
+    Every number on the dashboard is derived from this table, so nothing prunes
+    it. The single exception is undo, which removes the most recent row: a
+    misclick is not history, and leaving it in would mean the retention curve is
+    fitted to an answer the reader never gave.
+
+    ``card_before_json`` is what makes that undo possible, and it is an addition
+    to the schema in section 9 of the MVP. The reason is that fsrs cannot
+    reconstruct it: a ReviewLog carries only the rating and the time, and the
+    scheduler fuzzes its intervals, so replaying the same ratings lands on a
+    different date than the one the reader actually saw. Restoring a snapshot is
+    exact; replaying is not.
     """
 
     __tablename__ = "review"
@@ -128,6 +136,7 @@ class Review(SQLModel, table=True):
     rating: int
     reviewed_at: datetime = Field(default_factory=utcnow, index=True)
     log_json: str = ""
+    card_before_json: str = ""
 
 
 class Setting(SQLModel, table=True):

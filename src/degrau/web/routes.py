@@ -15,8 +15,9 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
-from degrau import deck, reading
+from degrau import deck, reading, review
 from degrau.reading import ReadingError
+from degrau.review import ReviewError
 from degrau.store import database, texts
 
 router = APIRouter()
@@ -166,3 +167,39 @@ def reveal_answer(request: Request, text_id: int, index: int, session: SessionDe
     if found is None:
         raise HTTPException(status_code=404, detail=f"no question {index}")
     return render(request, "partials/answer.html", question=found)
+
+
+def _review_context(session: Session) -> dict[str, object]:
+    """Card plus counters -- the two things every review response carries."""
+    return {"card": review.next_card(session), "counts": review.counts(session)}
+
+
+@router.get("/review", response_class=HTMLResponse)
+def review_screen(request: Request, session: SessionDep) -> HTMLResponse:
+    """The review session: one card at a time, driven by the keyboard."""
+    return render(request, "review.html", tab="review", **_review_context(session))
+
+
+@router.post("/review/grade", response_class=HTMLResponse)
+def grade_card(
+    request: Request,
+    session: SessionDep,
+    word_id: Annotated[int, Form()],
+    rating: Annotated[int, Form(ge=1, le=4)],
+) -> HTMLResponse:
+    """Apply a rating and hand back the next card."""
+    try:
+        review.grade(session, word_id, rating)
+    except ReviewError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(request, "partials/review_card.html", **_review_context(session))
+
+
+@router.post("/review/undo", response_class=HTMLResponse)
+def undo(request: Request, session: SessionDep) -> HTMLResponse:
+    """Take back the last answer and show that card again."""
+    try:
+        undone = review.undo_last(session)
+    except deck.DeckError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return render(request, "partials/review_card.html", undone=undone, **_review_context(session))

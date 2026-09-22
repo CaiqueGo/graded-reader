@@ -1,0 +1,75 @@
+{# One card, centred, with the answer hidden until asked for.
+
+   The whole card is replaced on every grade, which is what resets the answer
+   without any client-side state to get out of step. #}
+
+<div class="review-counters">
+  <span title="Cards due">{{ counts.due }} due</span>
+  <span title="New cards still allowed today">{{ counts.new }} new</span>
+  <span class="counter-done">{{ counts.reviewed_today }} done today</span>
+  {% if undone %}<span class="counter-undone">took back {{ undone }}</span>{% endif %}
+</div>
+
+{% if card %}
+<article class="card" id="card-{{ card.word_id }}">
+  {% if card.is_new %}<p class="card-flag">first time</p>{% endif %}
+
+  {% if card.has_example %}
+  <p class="card-cloze">{{ card.cloze }}</p>
+  {% else %}
+  <p class="card-cloze card-cloze-empty">no example sentence</p>
+  {% endif %}
+
+  <p class="card-word">{{ card.display }}</p>
+  <p class="card-band"><span class="pill band-{{ card.band }}">{{ card.band }}</span></p>
+
+  <div class="answer" hidden>
+    {% if card.pt %}<p class="card-pt">{{ card.pt }}</p>{% endif %}
+    {% if card.has_example %}
+    <p class="card-example">{{ card.example_en }}</p>
+    {% if card.example_pt %}<p class="card-example-pt">{{ card.example_pt }}</p>{% endif %}
+    {% endif %}
+  </div>
+
+  <div class="card-actions">
+    <button class="reveal-btn" data-reveal
+            onclick="this.closest('.card').querySelector('.answer').hidden = false;
+                     this.closest('.card').querySelector('.grades').hidden = false;
+                     this.hidden = true;">
+      Show answer <kbd>space</kbd>
+    </button>
+
+    <div class="grades" hidden>
+      {% for option in card.options %}
+      <form hx-post="/review/grade" hx-target="#review" hx-swap="innerHTML">
+        <input type="hidden" name="word_id" value="{{ card.word_id }}">
+        <input type="hidden" name="rating" value="{{ option.rating }}">
+        <button class="grade grade-{{ option.rating }}" type="submit"
+                data-rating="{{ option.key }}">
+          <span class="grade-label">{{ option.label }}</span>
+          <span class="grade-interval">~{{ option.interval }}</span>
+          <kbd>{{ option.key }}</kbd>
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+</article>
+{% else %}
+<div class="review-done">
+  <p class="done-title">Nothing left today.</p>
+  {% if counts.reviewed_today %}
+  <p class="hint">{{ counts.reviewed_today }} reviewed, {{ counts.introduced_today }} new
+    of {{ counts.daily_new_limit }} allowed.</p>
+  {% else %}
+  <p class="hint">Save some words while reading, and they will show up here.</p>
+  {% endif %}
+  <p><a class="back" href="/">&larr; Library</a></p>
+</div>
+{% endif %}
+
+{% if counts.reviewed_today %}
+<form class="undo-form" hx-post="/review/undo" hx-target="#review" hx-swap="innerHTML">
+  <button class="undo" type="submit" data-undo>Undo last <kbd>u</kbd></button>
+</form>
+{% endif %}

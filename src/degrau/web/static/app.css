@@ -26,6 +26,11 @@
 
 * { box-sizing: border-box; }
 
+/* An explicit display in a rule below beats the [hidden] attribute, which is how
+   the four grade buttons ended up visible before the answer was revealed. This
+   makes hidden mean hidden, whatever the element is styled as. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--paper);
@@ -237,4 +242,118 @@ code {
   .columns { grid-template-columns: minmax(0, 1fr); }
   .sidecard { position: static; }
   .glossary-item { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+}
+
+/* --- review -------------------------------------------------------------- */
+
+.review { max-width: 34rem; margin: 0 auto; text-align: center; }
+
+.review-counters {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  margin-bottom: 2.5rem;
+}
+.counter-done { color: var(--accent); }
+.counter-undone { color: var(--above); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 2.5rem 2rem 2rem;
+}
+
+.card-flag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--above);
+  margin: 0 0 1.5rem;
+}
+
+/* The gap sentence, which is the question. Serif and large, because this is
+   the thing being read; everything else on the card is apparatus. */
+.card-cloze {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  margin: 0 0 1.75rem;
+}
+.card-cloze-empty { color: var(--ink-faint); font-size: 0.9rem; font-style: italic; }
+
+.card-word { font-family: var(--serif); font-size: 2rem; font-weight: 600; margin: 0 0 0.5rem; }
+.card-band { margin: 0 0 1.5rem; }
+
+.answer { border-top: 1px solid var(--line); padding-top: 1.25rem; margin-bottom: 1.5rem; }
+.card-pt { font-size: 1.15rem; margin: 0 0 0.9rem; }
+.card-example { font-family: var(--serif); color: var(--ink-soft); margin: 0 0 0.25rem; }
+.card-example-pt { font-size: 0.88rem; color: var(--ink-faint); margin: 0; }
+
+.reveal-btn {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.grades form { display: contents; }
+
+.grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--sans);
+  padding: 0.6rem 0.3rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.grade:hover { border-color: var(--accent); }
+.grade-label { font-size: 0.85rem; font-weight: 600; }
+.grade-interval { font-size: 0.75rem; color: var(--ink-faint); }
+
+.grade-1 .grade-label { color: #8f3a2f; }
+.grade-2 .grade-label { color: #8a5316; }
+.grade-3 .grade-label { color: var(--accent); }
+.grade-4 .grade-label { color: #28576f; }
+
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 0.2rem;
+  padding: 0 0.25rem;
+  background: var(--paper);
+}
+
+.review-done { padding: 3rem 0; }
+.done-title { font-family: var(--serif); font-size: 1.4rem; margin: 0 0 0.5rem; }
+
+.undo-form { margin-top: 2rem; }
+.undo {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.undo:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+@media (max-width: 34rem) {
+  .grades { grid-template-columns: repeat(2, 1fr); }
 }

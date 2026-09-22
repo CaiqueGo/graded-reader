@@ -8,7 +8,7 @@ has to invent one. Creating the card here costs one line and removes that.
 ``Word.due``, ``stability`` and ``state`` are copies of what lives inside
 ``fsrs_json``. They exist so the queue and the dashboard are plain SQL. That
 makes them a lie waiting to happen, so exactly one function writes them:
-``_apply_card``. Nothing else in the project assigns those three fields.
+``apply_card``. Nothing else in the project assigns those three fields.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def card_state(card: Card) -> CardState:
     }.get(int(card.state), CardState.LEARNING)
 
 
-def _apply_card(word: Word, card: Card) -> Word:
+def apply_card(word: Word, card: Card) -> Word:
     """Write the card into the row, both serialised and denormalised."""
     word.fsrs_json = json.dumps(card.to_dict())
     word.due = card.due
@@ -136,7 +136,7 @@ def save_word(
         fsrs_json="{}",
         due=card.due,
     )
-    _apply_card(word, card)
+    apply_card(word, card)
     session.add(word)
     session.flush()
     session.refresh(word)

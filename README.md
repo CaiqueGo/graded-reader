@@ -19,7 +19,7 @@ trabalho determinístico — validação, lematização, agendamento, estatísti
 | M0 | Léxico: bandas, lematização, cobertura, `degrau analyze` | pronto |
 | M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
 | M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
-| M3 | Revisão com FSRS | a fazer |
+| M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
 | M4 | Painel | a fazer |
 | M5 | Exportação para o Anki | a fazer |
 
@@ -52,6 +52,20 @@ Ele roda `degrau profile`, adapta o texto, grava o JSON em `inbox/`, roda
 `analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
 ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
 `--known arquivo.txt` (um lema por linha).
+
+A revisão (`/review`) é movida pelo teclado, e isso não é enfeite: **espaço**
+revela, **1–4** avaliam (Again, Hard, Good, Easy), **u** desfaz a última nota. Os
+intervalos nos botões vêm marcados com `~` de propósito — o FSRS embaralha os
+intervalos para que oito palavras salvas do mesmo texto não voltem todas no mesmo
+dia para sempre, então o número exibido é a ordem de grandeza, não a promessa.
+
+Desfazer restaura o cartão a partir de um retrato guardado na hora da nota, e
+apaga a linha da revisão. Um clique errado não é história, e deixá-lo lá sujaria a
+curva de retenção e a contagem do dia.
+
+O limite diário de cartões novos (padrão 10, em `setting.daily_new_cards`) conta
+**primeiras aparições**, não avaliações: um cartão revisto quatro vezes hoje
+gastou uma vaga, não quatro.
 
 A leitura é onde o baralho nasce: abra um texto, clique numa palavra e salve. As
 palavras já salvas aparecem destacadas, inclusive nas formas flexionadas — salvar
