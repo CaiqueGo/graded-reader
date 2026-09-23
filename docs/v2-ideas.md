@@ -1,182 +1,183 @@
-# Ideias para a v2
+# Ideas for v2
 
-**Nada aqui está decidido.** É a lista do que foi levantado, com o que já existe
-no código, o que falta, e a pergunta que decide cada uma. O §12 do
-[MVP](graded-reader-mvp.md) manda usar duas semanas antes de escrever qualquer
-linha da v2 — o banco foi zerado em 22/09/2026 e esse é o relógio.
+**Nothing here is decided.** It is the list of what has been raised, with what already
+exists in the code, what is missing, and the question that decides each one. §12 of the
+[MVP](graded-reader-mvp.md) says to use the app for two weeks before writing a line of
+v2 — the database was emptied on 2026-09-22, and that is the clock.
 
-A ordem abaixo é por custo, não por importância.
+The order below is by cost, not by importance.
 
 ---
 
-## 1. Apagar textos na Biblioteca
+## 1. Deleting texts in the Library
 
-**Hoje não existe.** Não há rota, nem função no `library.py`: um texto importado
-fica para sempre.
+**It does not exist today.** There is no route and no function in `library.py`: an
+imported text stays forever.
 
-O trabalho é pequeno, mas tem uma decisão dentro dele que não é. O cartão guarda
-`word.first_text_id` como **chave estrangeira** para `text.id`, e o SQLite roda
-com a checagem **desligada** (é o padrão, e nada no app liga). Apagar o texto
-hoje deixaria cartões apontando para um fantasma, em silêncio.
+The work is small, but there is a decision inside it that is not. The card stores
+`word.first_text_id` as a **foreign key** to `text.id`, and SQLite runs with the check
+**turned off** (that is the default, and nothing in the app turns it on). Deleting a
+text today would leave cards pointing at a ghost, silently.
 
-Três saídas, e a escolha é de produto:
+Three ways out, and the choice is a product one:
 
-| Saída | O que acontece com os cartões |
+| Way out | What happens to the cards |
 |---|---|
-| Soltar a referência (`SET NULL`) | Ficam, sem origem. O baralho é seu, o texto era só onde você achou a palavra |
-| Apagar junto (`CASCADE`) | Somem com o texto, história de revisão incluída |
-| Recusar enquanto houver cartão | Você decide cartão a cartão antes |
+| Drop the reference (`SET NULL`) | They stay, with no origin. The deck is yours; the text was only where you found the word |
+| Delete them too (`CASCADE`) | They go with the text, review history included |
+| Refuse while cards exist | You decide card by card first |
 
-**Recomendação:** soltar a referência. O baralho é o ativo; o texto é o andaime.
-E ligar `PRAGMA foreign_keys = ON` junto, senão a próxima FK repete o problema.
-
----
-
-## 2. Áudio do texto
-
-Ouvir enquanto lê é o ganho clássico de um leitor graduado, e a primeira versão
-é quase de graça: o navegador tem `speechSynthesis` embutido — sem dependência,
-sem API, sem custo, funciona offline.
-
-O que dá para fazer com isso: um play no texto, um play no cartão de frase, e o
-destaque acompanhando a frase que está sendo lida (o evento `boundary` do
-próprio navegador dá a posição).
-
-**O que decide:** se a voz do sistema for boa o bastante para o seu ouvido. Se
-não for, o degrau seguinte é uma API de TTS — aí tem custo por caractere e vale
-guardar o áudio em disco, porque o mesmo texto relido não deve pagar duas vezes.
+**Recommendation:** drop the reference. The deck is the asset; the text is scaffolding.
+And turn on `PRAGMA foreign_keys = ON` at the same time, or the next foreign key will
+repeat the problem.
 
 ---
 
-## 3. O Review parecendo mais um Anki
+## 2. Audio for the text
 
-Precisa virar lista concreta antes de virar código — "parecer o Anki" são umas
-seis coisas diferentes, e algumas nós já temos:
+Listening while reading is the classic win of a graded reader, and the first version is
+nearly free: the browser has `speechSynthesis` built in — no dependency, no API, no
+cost, works offline.
 
-| Peça | Situação |
+What that buys: a play button on the text, another on the sentence card, and the
+highlight following the sentence being read (the browser's own `boundary` event gives
+the position).
+
+**What decides it:** whether the system voice is good enough for your ear. If it is
+not, the next step up is a TTS API — and then there is a cost per character, and it is
+worth keeping the audio on disk, because the same text re-read should not pay twice.
+
+---
+
+## 3. Review looking more like Anki
+
+This needs to become a concrete list before it becomes code — "look like Anki" is about
+six different things, and we already have some of them:
+
+| Piece | Situation |
 |---|---|
-| Teclado, quatro notas, intervalos nos botões | **existe** |
-| Desfazer | **existe** |
-| Editar o cartão durante a revisão | **existe** |
-| Limite diário de cartões novos | **existe** |
-| **Navegador do baralho** (ver, buscar, filtrar, apagar) | falta |
-| **Suspender e adiar** um cartão | falta |
-| Contadores separados por tipo, com cor (novo / aprendendo / vencido) | falta (hoje são três números lisos) |
-| Tela inicial de estudo antes da fila | falta |
-| Tipos de nota e modelos de cartão | falta, e provavelmente não deve existir |
+| Keyboard, four grades, intervals on the buttons | **exists** |
+| Undo | **exists** |
+| Editing the card during review | **exists** |
+| Daily limit on new cards | **exists** |
+| **Deck browser** (see, search, filter, delete) | missing |
+| **Suspend and bury** a card | missing |
+| Counters split by type, with colour (new / learning / due) | missing (three plain numbers today) |
+| A study home screen before the queue | missing |
+| Note types and card templates | missing, and probably should stay that way |
 
-**Recomendação:** começar pelo **navegador do baralho**. É a lacuna mais óbvia
-do app hoje — não há como responder "o que eu tenho?", achar aquele cartão ruim
-que você lembra de ter feito, ou apagar um. Tudo por baixo já existe
-(`words.all_cards`, a edição, o `CardKind`); falta a página.
+**Recommendation:** start with the **deck browser**. It is the most obvious gap in the
+app today — there is no way to answer "what do I have?", to find that bad card you
+remember making, or to delete one. Everything underneath already exists
+(`words.all_cards`, the editing, `CardKind`); the page is what is missing.
 
-Depois **suspender**, que é o que se faz com um cartão que não vale a pena e não
-se quer apagar.
+Then **suspend**, which is what you do with a card that is not worth it and that you do
+not want to delete.
 
-**O que não copiar:** tipos de nota e modelos. É a parte do Anki que mais gera
-configuração e menos gera estudo, e aqui os dois tipos de cartão saem do jeito
-que você salvou.
-
----
-
-## 4. PDF, EPUB e outros arquivos
-
-A extração é a parte fácil (`pypdf` ou `pdfminer` para PDF, `ebooklib` para
-EPUB). O problema é de modelo de dados: hoje **um texto é um artigo**, e o
-limite é de 2.000 palavras (`sources.MAX_WORDS`). Um livro tem 80.000.
-
-Então isso não é "mais um formato de entrada", é a noção de **obra dividida em
-partes**: um capítulo vira um texto, os capítulos se conhecem, a leitura lembra
-onde parou, e a Biblioteca agrupa em vez de listar 40 itens soltos.
-
-**O que decide:** se o que você quer é ler livro ou só tirar um trecho de um
-PDF. Se for a segunda, o caminho é bem mais curto — aceitar o arquivo, extrair,
-e deixar você escolher o pedaço.
+**What not to copy:** note types and templates. It is the part of Anki that generates
+the most configuration and the least studying, and here the two kinds of card come out
+the way you saved them.
 
 ---
 
-## 5. Vídeo do YouTube com legenda adaptada embaixo
+## 4. PDF, EPUB and other files
 
-O vídeo embutido na página e a legenda no seu nível abaixo dele.
+Extraction is the easy part (`pypdf` or `pdfminer` for PDF, `ebooklib` for EPUB). The
+problem is the data model: today **one text is one article**, and the limit is 2,000
+words (`sources.MAX_WORDS`). A book has 80,000.
 
-Extrair a transcrição é resolvido (`yt-dlp` pega as legendas, inclusive as
-automáticas). O problema real é outro, e é bom encará-lo antes de começar:
+So this is not "one more input format", it is the notion of a **work divided into
+parts**: a chapter becomes a text, the chapters know about each other, reading
+remembers where it stopped, and the Library groups them instead of listing 40 loose
+items.
 
-**adaptar destrói o alinhamento.** As legendas vêm em trechos com tempo
-(`00:01:12 --> 00:01:15`). A adaptação reescreve o texto inteiro — junta frases,
-corta outras, troca palavras — e o resultado não tem mais como saber qual pedaço
-corresponde a qual segundo. Ou seja: ou a legenda acompanha o vídeo, ou ela está
-no seu nível. As duas ao mesmo tempo exigem escolher um dos dois desenhos:
-
-- **Adaptar trecho a trecho**, preservando o tempo de cada um. A legenda
-  acompanha o vídeo de verdade. O texto fica pior — o adaptador perde a visão do
-  todo e não pode reorganizar nada.
-- **Adaptar o todo e não sincronizar.** O texto fica bom, aparece ao lado do
-  vídeo como um artigo, e você lê antes ou depois de assistir. Sem karaokê.
-
-**Recomendação:** a segunda, porque é a que respeita o que o app já faz bem — e
-porque "ler o texto adaptado, depois assistir ao original" é um exercício melhor
-do que legenda correndo.
+**What decides it:** whether what you want is to read books or just to pull a passage
+out of a PDF. If it is the second, the path is far shorter — accept the file, extract
+it, and let you choose the piece.
 
 ---
 
-## 6. Remontar a página com o texto trocado (X, Reddit)
+## 5. A YouTube video with adapted subtitles underneath
 
-A ideia: buscar a página, trocar o texto pelo texto no seu nível, e devolver a
-página **com a cara dela**, para ler threads de rede social adaptadas.
+The video embedded in the page and the subtitles at your level below it.
 
-É a mais ambiciosa da lista e a única sobre a qual eu tenho ressalva séria — em
-três frentes:
+Pulling the transcript is solved (`yt-dlp` fetches the subtitles, auto-generated ones
+included). The real problem is elsewhere, and it is better faced before starting:
 
-**Segurança.** Devolver HTML de terceiro dentro do seu app é XSS por construção.
-Não é hipótese: hoje o app já busca qualquer endereço que você digitar, e a
-única coisa que segura isso é que o conteúdo buscado vira **texto**, nunca
-marcação. Manter a marcação original significa sanitizar HTML hostil, o que é
-uma disciplina inteira, e fazer isso num app **sem autenticação nenhuma**.
+**adapting destroys the alignment.** Subtitles arrive in timed cues (`00:01:12 -->
+00:01:15`). Adaptation rewrites the whole text — joining sentences, cutting others,
+swapping words — and the result has no way of knowing which piece belongs to which
+second. Which means: either the subtitle follows the video, or it is at your level.
+Both at once requires picking one of two designs:
 
-**Acesso.** X e Reddit não são páginas comuns. O X exige login e bloqueia
-leitura anônima. O Reddit tem JSON público, mas com termos que restringem uso
-automatizado. Essa ideia não está travada por código — está travada por acesso,
-e nenhuma linha escrita aqui destrava.
+- **Adapt cue by cue**, preserving each one's timing. The subtitle really follows the
+  video. The text gets worse — the adapter loses sight of the whole and cannot
+  reorganise anything.
+- **Adapt the whole thing and do not synchronise.** The text stays good, appears beside
+  the video as an article, and you read it before or after watching. No karaoke.
 
-**Valor.** Numa thread, o que vale não é o CSS: é **quem disse o quê e
-respondendo a quem**. Isso é estrutura, e estrutura dá para preservar como
-dados.
-
-**Contraproposta:** em vez de remontar a página, guardar a **estrutura da
-conversa** — autor, ordem, aninhamento — e renderizar na sua própria tela de
-leitura, com cada fala adaptada ao seu nível. Você ganha a thread legível, com
-todo o resto do app funcionando em cima (clicar palavra, salvar frase), e sem
-herdar HTML de ninguém. Fica faltando só a aparência do site — que é justamente
-a parte que não ensina inglês.
+**Recommendation:** the second, because it respects what the app already does well —
+and because "read the adapted text, then watch the original" is a better exercise than
+a subtitle racing past.
 
 ---
 
-## Decisões em aberto
+## 6. Rebuilding the page with the text swapped (X, Reddit)
 
-Cada item acima esbarra numa escolha que código nenhum resolve. Estão juntas
-aqui para serem respondidas de uma vez, quando forem:
+The idea: fetch the page, swap the text for text at your level, and give the page back
+**looking like itself**, so social media threads can be read adapted.
 
-| # | A pergunta | Recomendação |
+It is the most ambitious on the list and the only one I have a serious reservation
+about — on three fronts:
+
+**Security.** Returning a third party's HTML inside your app is XSS by construction.
+This is not hypothetical: the app already fetches any address you type, and the only
+thing holding that safe is that the fetched content becomes **text**, never markup.
+Keeping the original markup means sanitising hostile HTML, which is a discipline of its
+own, and doing it in an app with **no authentication at all**.
+
+**Access.** X and Reddit are not ordinary pages. X requires a login and blocks
+anonymous reading. Reddit has public JSON, but with terms that restrict automated use.
+This idea is not blocked by code — it is blocked by access, and no line written here
+unblocks it.
+
+**Value.** In a thread, what matters is not the CSS: it is **who said what, replying to
+whom**. That is structure, and structure can be preserved as data.
+
+**Counter-proposal:** instead of rebuilding the page, store the **structure of the
+conversation** — author, order, nesting — and render it in your own reading screen,
+with each post adapted to your level. You get the thread readable, with the rest of the
+app working on top of it (click a word, save a sentence), and without inheriting
+anyone's HTML. What is left missing is only the site's appearance — which is precisely
+the part that teaches no English.
+
+---
+
+## Open questions
+
+Each item above runs into a choice that no code resolves. They are gathered here to be
+answered in one go, whenever they are:
+
+| # | The question | Recommendation |
 |---|---|---|
-| 1 | O que acontece com os cartões de um texto apagado? | Soltar a referência, e ligar `PRAGMA foreign_keys = ON` |
-| 2 | A voz do navegador basta, ou vai precisar de TTS pago? | Começar com a do navegador; só pagar se o ouvido reclamar |
-| 3 | Quais peças do Anki importam? | Navegador do baralho primeiro, suspender depois; tipos de nota nunca |
-| 4 | Ler livro inteiro ou tirar trecho de PDF? | Trecho, até existir motivo para a noção de obra em capítulos |
-| 5 | Legenda sincronizada ou texto bem adaptado? | Texto bem adaptado, sem karaokê |
-| 6 | Remontar a página ou guardar a estrutura da conversa? | Estrutura, sempre |
+| 1 | What happens to the cards of a deleted text? | Drop the reference, and turn on `PRAGMA foreign_keys = ON` |
+| 2 | Is the browser voice enough, or will this need paid TTS? | Start with the browser's; only pay if your ear complains |
+| 3 | Which pieces of Anki matter? | Deck browser first, suspend next; note types never |
+| 4 | Read whole books, or pull a passage out of a PDF? | A passage, until there is a reason for chaptered works |
+| 5 | Synchronised subtitles or well-adapted text? | Well-adapted text, no karaoke |
+| 6 | Rebuild the page or store the conversation's structure? | Structure, always |
 
-Nenhuma delas precisa ser respondida agora. Todas ficam mais fáceis depois de
-duas semanas de uso real.
+None of them has to be answered now. All of them get easier after two weeks of real
+use.
 
-## Sugestão de ordem
+## Suggested order
 
-1. **Apagar textos** — dias, e conserta uma falha de integridade que já existe
-2. **Áudio** — dias, e é a melhor relação valor/esforço da lista
-3. **Navegador do baralho** — a maior lacuna do app hoje
-4. **PDF/EPUB ou YouTube** — semanas, e a escolha depende do que você lê
-5. **Threads** — só depois de decidir estrutura em vez de remontagem
+1. **Deleting texts** — days, and it fixes an integrity flaw that already exists
+2. **Audio** — days, and the best value for effort on the list
+3. **Deck browser** — the biggest gap in the app today
+4. **PDF/EPUB or YouTube** — weeks, and the choice depends on what you read
+5. **Threads** — only after deciding on structure instead of rebuilding
 
-Fora da lista, mas rondando: **celular**. Não foi pedido, e continua sendo onde
-a leitura realmente acontece. Só que sair do localhost significa autenticação,
-HTTPS e deploy — projeto declarado, não puxadinho.
+Outside the list, but circling it: **the phone**. It was not asked for, and it is still
+where reading actually happens. Except that leaving localhost means authentication,
+HTTPS and deployment — a declared project, not a lean-to.

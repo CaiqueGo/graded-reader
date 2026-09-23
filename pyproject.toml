@@ -1,7 +1,7 @@
 [project]
 name = "graded-reader"
 version = "0.1.0"
-description = "Leitor de ingles graduado por nivel, com flashcards proprios e painel de evolucao."
+description = "A graded English reader with its own flashcards and a progress dashboard."
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7",
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Cada grupo entra quando a etapa correspondente for construida.
+# Each group arrives with the milestone that needs it.
 lexicon = ["spacy>=3.7", "wordfreq>=3.1"]
 db = ["sqlmodel>=0.0.22"]
 srs = ["fsrs>=6.0"]

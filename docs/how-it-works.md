@@ -1,266 +1,264 @@
-# Como funciona, hoje
+# How it works, today
 
-Este documento descreve o sistema **como ele está**, não como foi planejado. A
-especificação completa, com as decisões e o que ficou para depois, está em
+This document describes the system **as it is**, not as it was planned. The full
+specification, with the decisions and what was left for later, is in
 [`graded-reader-mvp.md`](graded-reader-mvp.md).
 
-## O laço
+## The loop
 
-Tudo gira em volta de um ciclo de quatro passos. Cada tela do app é um deles.
+Everything turns around a four-step cycle. Each screen of the app is one of them.
 
 ```
-   adaptar            ler              revisar           medir
-  ---------        --------          ---------        ---------
-  um texto   -->   no seu    -->     o que você  -->   se está
-  qualquer         nível             salvou            colando
-      ^                                                    |
-      +----------------------------------------------------+
-            o painel diz se o nível já pode subir
+    adapt              read             review            measure
+  ---------        ----------        -----------        ----------
+  any text   -->   at your     -->   what you     -->   whether it
+  at all           level             saved              is sticking
+      ^                                                      |
+      +------------------------------------------------------+
+             the dashboard says when the level can go up
 ```
 
-O app faz a parte determinística — medir, lematizar, agendar, contar. A
-reescrita do texto é do Claude Code. O que você aprende sai do que **você**
-escolhe salvar enquanto lê.
+The app does the deterministic part — measuring, lemmatising, scheduling, counting.
+Rewriting the text belongs to Claude Code. What you learn comes out of what **you**
+choose to save while reading.
 
-## Mapa das telas
+## Map of the screens
 
-| Tela | Endereço | Para quê |
+| Screen | Address | What for |
 |---|---|---|
-| Biblioteca | `/` | Adicionar textos e abrir os que já entraram |
-| Leitura | `/texts/{id}` | Ler, salvar palavras, salvar frases, ver o glossário |
-| Review | `/review` | A fila do dia |
-| Painel | `/dashboard` | Se está funcionando, e exportar para o Anki |
+| Library | `/` | Adding texts and opening the ones already in |
+| Reading | `/texts/{id}` | Reading, saving words, saving sentences, the glossary |
+| Review | `/review` | The day's queue |
+| Dashboard | `/dashboard` | Whether it is working, and the Anki export |
 
-Sobe com `reader serve`, em http://127.0.0.1:8000.
+Start it with `reader serve`, at http://127.0.0.1:8000.
 
-## Três palavras que aparecem em toda tela
+## Three words that turn up on every screen
 
-**Lema** é a forma base de uma palavra: `machines` e `machine` são o mesmo lema,
-`machine`. O baralho guarda lemas, e é por isso que salvar `machine` faz
-`machines` aparecer destacada no texto.
+**Lemma** is the base form of a word: `machines` and `machine` are the same lemma,
+`machine`. The deck stores lemmas, which is why saving `machine` makes `machines`
+show up highlighted in the text.
 
-**Banda** é o nível CEFR estimado da palavra — A1 a C2. Sai da frequência com
-que a palavra aparece no inglês em geral, não de uma lista oficial da CEFR; os
-cortes estão em `data/bands.toml` e podem ser recalibrados sem mexer em código.
+**Band** is the word's estimated CEFR level — A1 to C2. It comes from how often the
+word appears in English in general, not from an official CEFR list; the cuts live in
+`data/bands.toml` and can be recalibrated without touching code.
 
-**Cobertura** é a porcentagem das palavras de um texto que estão no seu nível ou
-abaixo. É o número que decide se um texto é legível para você. Ela mede
-**vocabulário, não gramática** — um texto pode medir 95% e ainda assim ter
-subordinação demais para um A1.
-
----
-
-## Biblioteca: de onde vêm os textos
-
-Três portas, todas levando ao mesmo lugar:
-
-- **Add a text** — cola um endereço ou o artigo inteiro, escolhe o nível, e o
-  app adapta sozinho. É o caminho normal.
-- **Import waiting texts** — lê o que estiver no diretório `inbox/`. É o que o
-  comando `/adapt` do terminal usa: ele grava um JSON ali e você importa.
-- **Or paste the document** — cola o JSON adaptado direto no navegador.
-
-Nada é apagado quando dá errado. Um documento inválido vai para
-`inbox/rejected/` com um `.error.txt` ao lado explicando o motivo. Reimportar o
-mesmo texto não duplica: a identidade é o hash do inglês adaptado.
-
-Texto que fica abaixo do limiar de cobertura **entra assim mesmo**, marcado
-`out of level`. O app mostra o número e deixa a decisão com você.
+**Coverage** is the share of a text's words that sit at your level or below. It is the
+number that decides whether a text is readable for you. It measures **vocabulary, not
+grammar** — a text can measure 95% and still carry more subordination than an A1
+reader can follow.
 
 ---
 
-## Leitura: onde o baralho nasce
+## Library: where texts come from
 
-A tela tem o texto adaptado, e o original a um clique na aba ao lado.
+Three doors, all leading to the same place:
 
-### Clicar uma palavra
+- **Add a text** — paste an address or the whole article, pick the level, and the app
+  adapts it on its own. This is the normal path.
+- **Import waiting texts** — reads whatever is sitting in the `inbox/` directory. This
+  is what the terminal's `/adapt` command uses: it writes a JSON there and you import.
+- **Or paste the document** — paste the adapted JSON straight into the browser.
 
-Abre um painel lateral com a tradução e o exemplo, quando o texto trouxe, e um
-botão para salvar. Vira um **cartão de palavra**. Palavras já salvas aparecem
-destacadas no texto, inclusive nas formas flexionadas.
+Nothing is destroyed when something goes wrong. An invalid document goes to
+`inbox/rejected/` with an `.error.txt` beside it explaining why. Re-importing the same
+text does not duplicate it: identity is the hash of the adapted English.
 
-### Selecionar um trecho
+A text that lands below the coverage threshold **comes in anyway**, marked `out of
+level`. The app shows you the number and leaves the decision with you.
 
-Arraste o mouse por duas palavras ou mais e aparece **Save this sentence**.
-Você escolhe qual palavra do trecho é o alvo, escreve o que a frase quer dizer,
-e vira um **cartão de frase**.
+---
 
-O recorte é exatamente o que você selecionou — uma oração, uma expressão, meia
-linha. A palavra-alvo é **marcada, não apagada**: o ponto é ler a frase e saber
-o que ela diz, não completar lacuna.
+## Reading: where the deck is born
 
-Na hora de escolher o alvo, as palavras que o texto marcou como acima do seu
-nível vêm primeiro — são as que provavelmente fizeram você selecionar aquilo.
+The screen holds the adapted text, with the original one click away in the next tab.
 
-### O glossário
+### Clicking a word
 
-Embaixo do texto fica o **glossário**: a lista de palavras que a adaptação
-decidiu ensinar naquele texto, com tradução e frase de exemplo.
+Opens a side panel with the translation and the example, when the text brought them,
+and a button to save. It becomes a **word card**. Words already saved show up
+highlighted in the text, inflected forms included.
 
-Quem escolhe é o adaptador, na hora em que o texto foi processado, olhando o seu
-perfil: o que você já sabe, o que está prestes a esquecer, e quantas palavras
-novas cabem. Um texto adaptado costuma trazer de 10 a 30 entradas. O glossário
-fica guardado com o texto — não é recalculado, e não muda quando o seu baralho
-muda.
+### Selecting a passage
 
-O que a tela acrescenta é só uma coisa: quais dessas palavras **já estão no seu
-baralho**, marcadas com `in deck`.
+Drag the mouse across two words or more and **Save this sentence** appears. You pick
+which word in the passage is the target, write what the sentence means, and it becomes
+a **sentence card**.
 
-**Save all** salva todas de uma vez, como cartões de palavra. As que já estão no
-baralho são deixadas exatamente como estão, **agendamento incluído** — clicar
-duas vezes não reinicia o cronograma de nada.
+The cut is exactly what you selected — a clause, an expression, half a line. The
+target word is **marked, not removed**: the point is to read the sentence and know
+what it says, not to fill in a blank.
 
-### Glossário e cartão de frase não são a mesma coisa
+When you choose the target, the words the text flagged as above your level come first
+— they are the ones that probably made you select that passage.
 
-|  | Glossário | Selecionar um trecho |
+### The glossary
+
+Under the text sits the **glossary**: the list of words the adaptation decided to
+teach in that text, with a translation and an example sentence.
+
+The one choosing is the adapter, at the moment the text was processed, looking at your
+profile: what you already know, what is about to slip, and how many new words fit. An
+adapted text usually brings between 10 and 30 entries. The glossary is stored with the
+text — it is not recomputed, and it does not change when your deck changes.
+
+What the screen adds is one thing only: which of those words are **already in your
+deck**, marked `in deck`.
+
+**Save all** saves every one of them at once, as word cards. The ones already in the
+deck are left exactly as they are, **schedule included** — clicking twice does not
+restart anything's timetable.
+
+### A glossary and a sentence card are not the same thing
+
+|  | Glossary | Selecting a passage |
 |---|---|---|
-| Quem escolhe | a adaptação, antes de você ler | você, enquanto lê |
-| Frente do cartão | a palavra, com o exemplo como lacuna | a frase, com a palavra destacada |
-| Verso | tradução da palavra | o que **você** escreveu |
-| Custo | um clique para 20 palavras | um por frase |
+| Who chooses | the adaptation, before you read | you, while reading |
+| Front of the card | the word, with the example as a cloze | the sentence, with the word marked |
+| Back | the word's translation | what **you** wrote |
+| Cost | one click for twenty words | one per sentence |
 
-O glossário é o caminho rápido e as palavras são escolha do adaptador. A seleção
-é lenta e é sua. Os dois convivem: a mesma palavra pode ter um cartão de palavra
-e um ou mais cartões de frase.
+The glossary is the fast path and the words are the adapter's choice. Selecting is
+slow and it is yours. The two live side by side: the same word can have a word card
+and one or more sentence cards.
 
 ---
 
-## Review: a fila do dia
+## Review: the day's queue
 
-O topo da tela é um placar:
+The top of the screen is a scoreboard:
 
 ```
 1 due   9 new   +3 waiting   1 done today
 ```
 
-| Contador | O que é |
+| Counter | What it is |
 |---|---|
-| `due` | Cartões que já venceram e precisam voltar hoje |
-| `new` | Cartões novos que ainda cabem **no limite de hoje** |
-| `+N waiting` | Cartões que você salvou e que o limite segurou |
-| `done today` | Avaliações desde a meia-noite |
+| `due` | Cards that have come round and need answering today |
+| `new` | New cards that still fit **within today's limit** |
+| `+N waiting` | Cards you saved that the limit is holding back |
+| `done today` | Gradings since midnight |
 
-### O teclado é a interface
+### The keyboard is the interface
 
-**espaço** revela a resposta. **1–4** avaliam: Again, Hard, Good, Easy. **u**
-desfaz a última nota. O mouse funciona, mas ninguém que revisa todo dia usa.
+**space** reveals the answer. **1–4** grade: Again, Hard, Good, Easy. **u** undoes the
+last grading. The mouse works, but nobody who reviews daily uses it.
 
-Os intervalos escritos nos botões vêm com `~` de propósito. O FSRS embaralha os
-intervalos para que oito palavras salvas do mesmo texto não voltem todas juntas
-para sempre — o número é a ordem de grandeza, não a promessa.
+The intervals written on the buttons carry a `~` on purpose. FSRS fuzzes the intervals
+so that eight words saved from the same text do not come back together forever — the
+number is the order of magnitude, not the promise.
 
-### Desfazer é desfazer mesmo
+### Undo really undoes
 
-`u` restaura o cartão a partir de um retrato guardado na hora da nota, e **apaga
-a linha da revisão**. Um clique errado não vira história: se ficasse lá, sujaria
-a curva de retenção e a contagem do dia.
+`u` restores the card from a snapshot taken at grading time, and **deletes the review
+row**. A misclick does not become history: left there, it would dirty the retention
+curve and the day's count.
 
-### O limite diário de cartões novos
+### The daily limit on new cards
 
-Padrão **10**, ajustável na própria tela de review. Ele conta **primeiras
-aparições**, não avaliações — um cartão revisto quatro vezes hoje gastou uma
-vaga, não quatro.
+**10** by default, adjustable on the review screen itself. It counts **first
+appearances**, not gradings — a card reviewed four times today spent one slot, not
+four.
 
-O limite existe para você não acordar com 300 cartões vencidos daqui a um mês e
-abandonar o baralho. Mas ele esconde coisa, e por isso a tela diz quantos estão
-esperando e por quê. Os cartões novos saem **do mais antigo para o mais
-recente**: uma pilha atrasada é resolvida, não soterrada por chegadas frescas —
-então salvar uma frase hoje não fura a fila das palavras de ontem.
+The limit exists so you do not wake up to 300 due cards in a month and abandon the
+deck. But it hides things, which is why the screen says how many are waiting and why.
+New cards come out **oldest first**: a backlog gets worked through rather than buried
+under fresher arrivals — so saving a sentence today does not jump the queue ahead of
+yesterday's words.
 
-### Editar e adicionar
+### Editing and adding
 
-Dá para **adicionar uma palavra** direto ao baralho, sem passar por texto
-nenhum, e **corrigir o cartão** na hora em que ele aparece — inclusive o lema,
-que é o ponto fraco conhecido da lematização (`give up` não é `give`). Corrigir
-o lema não mexe no agendamento: é o mesmo cartão. Renomear para um lema que já
-existe é recusado, porque fundir dois históricos é decisão sua.
+You can **add a word** straight to the deck without going through any text, and
+**correct the card** at the moment it comes up — the lemma included, which is the known
+weak point of lemmatisation (`give up` is not `give`). Correcting the lemma does not
+touch the schedule: it is the same card. Renaming it to a lemma that already exists is
+refused, because merging two histories is your decision.
 
 ---
 
-## Painel: se está funcionando
+## Dashboard: whether it is working
 
-O painel responde uma pergunta, e ela **não** é "quantos cartões eu tenho".
+The dashboard answers one question, and it is **not** "how many cards do I have".
 
-### Os cinco números
+### The five numbers
 
-| Número | O que significa |
+| Number | What it means |
 |---|---|
-| **In the deck** | Cartões salvos, no total |
-| **Learned** | Cartões com estabilidade ≥ **21 dias** — os que você provavelmente ainda terá em três semanas |
-| **In flight** | Ainda em aprendizagem ou reaprendizagem, não assentaram |
-| **Reviewed today** | Avaliações desde a meia-noite |
-| **Retention** | Quantos você acertou, das tentativas reais de recordação dos últimos 30 dias |
+| **In the deck** | Cards saved, in total |
+| **Learned** | Cards with stability ≥ **21 days** — the ones you will probably still have in three weeks |
+| **In flight** | Still learning or relearning, not settled |
+| **Reviewed today** | Gradings since midnight |
+| **Retention** | How many you got right, out of the real recall attempts of the last 30 days |
 
-"Learned" é uma afirmação sobre o futuro, e o app usa a mesma constante de 21
-dias para dizer isso no painel e para montar a lista de palavras que o adaptador
-pode considerar conhecidas. Uma definição só, nos dois lugares.
+"Learned" is a claim about the future, and the app uses the same 21-day constant to
+say it on the dashboard and to build the list of words the adapter may treat as known.
+One definition, in both places.
 
-### A escada
+### The ladder
 
-Para cada banda, quantas palavras daquela banda você já aprendeu sobre o tamanho
-da banda: **58 de 500 do A1 é 11,6%**, e isso é informação. "140 cartões no
-baralho" não é.
+For each band, how many words of that band you have learned over how many words the
+band holds: **58 out of 500 at A1 is 11.6%**, and that is information. "140 cards in
+the deck" is not.
 
-A barra tem duas camadas: o que está no baralho e, mais forte, o que já conta
-como aprendido. O denominador vem da lista de palavras, então recalibrar
-`bands.toml` move a escada junto.
+The bar has two layers: what is in the deck and, stronger, what already counts as
+learned. The denominator comes from the word list, so recalibrating `bands.toml` moves
+the ladder with it.
 
-**C1 e C2 não têm barra.** Elas vêm de uma escala de frequência sem fim; não
-existe um total para dividir, e imprimir um seria inventá-lo. Você vê a
-contagem, não a porcentagem.
+**C1 and C2 have no bar.** They come from an open-ended frequency scale; there is no
+total to divide by, and printing one would be inventing it. You see the count, not the
+percentage.
 
-### Os dois gráficos
+### The two charts
 
-SVG desenhado pelo app, sem biblioteca. **Histórico**: barras dos últimos 30
-dias. **Retenção**: para cada um dos próximos 30 dias, a chance média de você
-recordar um cartão — junto com quantos vencem naquele dia.
+SVG drawn by the app, no library. **History**: bars for the last 30 days.
+**Retention**: for each of the next 30 days, the average chance you will recall a card
+— along with how many fall due that day.
 
-A curva usa **só os cartões já avaliados**. Um cartão que nunca foi revisto não
-tem memória para decair, e jogá-lo na média como 0 ou como 100% moveria a linha
-sem significar nada.
+The curve uses **only cards that have been graded**. A card never reviewed has no
+memory to decay, and averaging it in as either 0 or 100% would move the line without
+meaning anything.
 
-O eixo da retenção vai de **0 a 100% inteiros**. Cortá-lo em 80% transformaria
-um declínio suave em precipício. Cada marca tem um `<title>` no passar do mouse,
-e cada gráfico tem uma tabela embaixo para quem quer o número exato.
+The retention axis runs from **0 to a full 100%**. Cutting it at 80% would turn a
+gentle decline into a cliff. Every mark carries a `<title>` on hover, and every chart
+has a table underneath for whoever wants the exact number.
 
-### O painel se recusa a responder duas coisas
+### The dashboard refuses to answer two things
 
-A **retenção fica em branco** até haver tentativas reais de recordação. Os
-passos de aprendizagem são separados por minutos; contá-los como retenção infla
-o número sem dizer nada.
+**Retention stays blank** until there are real recall attempts. Learning steps are
+minutes apart; counting them as retention inflates the number without saying anything.
 
-E, como já dito, **C1 e C2 não ganham porcentagem**. Um painel confiantemente
-errado é pior que painel nenhum, porque nada na tela avisa para duvidar.
-
----
-
-## Exportar para o Anki
-
-Pelo botão **Export for Anki** no painel ou por `reader export` — os dois
-produzem o mesmo arquivo, byte a byte.
-
-São três colunas: a palavra (ou a frase), a tradução com o exemplo em itálico, e
-as tags. A tag diz qual tipo de cartão é (`graded-reader word` e `graded-reader
-sentence`), então você pode dar tratamentos diferentes aos dois no Anki.
-
-Reexportar **atualiza** as mesmas notas em vez de dobrar o baralho: o Anki usa o
-primeiro campo como identidade da nota.
-
-Cartão salvo clicando numa palavra sai com o verso vazio. O comando diz quantos
-estão assim.
+And, as above, **C1 and C2 get no percentage**. A confidently wrong dashboard is worse
+than no dashboard, because nothing on the screen tells you to doubt it.
 
 ---
 
-## O que o sistema não faz
+## Exporting to Anki
 
-Vale saber antes de confiar demais:
+Through the **Export for Anki** button on the dashboard or through `reader export` —
+both produce the same file, byte for byte.
 
-- **Não há autenticação.** `reader serve` escuta só em localhost, e deve
-  continuar assim. Quem alcançar a porta lê e altera o baralho.
-- **A cobertura não mede gramática.** Só vocabulário.
-- **As bandas são chutes calibrados**, não verdade oficial da CEFR.
-- **A lematização erra em verbo frasal.** `give up` vira `give`. Dá para
-  corrigir o lema na tela de review.
-- **O adaptador busca qualquer endereço http(s) que você digitar**, inclusive de
-  rede local. Aceitável porque só você digita — não seria, com um segundo
-  usuário.
+Three columns: the word (or the sentence), the translation with the example in
+italics, and the tags. The tag says which kind of card it is (`graded-reader word` and
+`graded-reader sentence`), so you can treat the two differently in Anki.
+
+Re-exporting **updates** the same notes instead of doubling the deck: Anki uses the
+first field as the note's identity.
+
+A card saved by clicking a word comes out with an empty back. The command tells you
+how many are like that.
+
+---
+
+## What the system does not do
+
+Worth knowing before trusting it too far:
+
+- **There is no authentication.** `reader serve` listens on localhost only, and it
+  should stay that way. Whoever reaches the port reads and changes the deck.
+- **Coverage does not measure grammar.** Only vocabulary.
+- **The bands are calibrated guesses**, not official CEFR truth.
+- **Lemmatisation gets phrasal verbs wrong.** `give up` becomes `give`. You can
+  correct the lemma on the review screen.
+- **The adapter fetches any http(s) address you type**, including ones on the local
+  network. Acceptable because only you type them — it would not be, with a second
+  user.

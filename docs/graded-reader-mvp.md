@@ -1,168 +1,171 @@
-# Graded Reader — Documento de MVP
+# Graded Reader — MVP document
 
-Leitor de inglês graduado por nível, com flashcards próprios e painel de evolução.
-Documento de especificação para implementação assistida por Claude Code.
+A graded English reader with its own flashcards and a progress dashboard.
+Specification document for implementation assisted by Claude Code.
 
-**Versão:** 1.0 — 21/09/2026
-**Status das decisões:** fechadas, salvo onde marcado `[aberto]`.
-
----
-
-## 1. O problema
-
-Ler em inglês só funciona como aprendizado quando o texto está pouco acima do que
-a pessoa já sabe. Material autêntico (notícia, artigo, transcrição) quase nunca
-está. As soluções existentes ou são textos graduados prontos — poucos, chatos, sobre
-assuntos que não interessam — ou são tradutores, que não ensinam nada.
-
-O Graded Reader pega **qualquer** texto e o reescreve no nível certo, extrai o vocabulário
-que vale a pena aprender, e acompanha o que foi realmente aprendido ao longo do tempo.
-
-**Usuário da v1:** uma pessoa (o autor), falante nativo de português brasileiro,
-estudando inglês. Sem autenticação, sem multiusuário, sem nuvem.
+**Version:** 1.0 — 2026-09-21
+**Status of the decisions:** closed, except where marked `[open]`.
 
 ---
 
-## 2. A tese do produto
+## 1. The problem
 
-Três afirmações que o MVP existe para testar:
+Reading in English only works as learning when the text sits a little above what the
+reader already knows. Authentic material (news, articles, transcripts) almost never
+does. The existing answers are either ready-made graded texts — few of them, dull,
+about subjects nobody cares about — or translators, which teach nothing.
 
-1. **O nível precisa ser verificado, não pedido.** Um LLM instruído a "escrever em A1"
-   erra silenciosamente. A garantia vem de comparar o texto gerado com uma lista de
-   frequência, em código, e exigir cobertura mínima.
-2. **O nível CEFR é grosseiro; o vocabulário pessoal é o que importa.** A meta é
-   adaptar para "as 1.000 palavras do A1 **mais** as 312 que este usuário já provou
-   dominar", introduzindo de 5 a 8 palavras novas por texto (i+1).
-3. **O vocabulário aprendido é o único indicador de progresso que não mente.** Não
-   "dias de ofensiva", não "textos lidos": palavras que sobrevivem à repetição espaçada.
+Graded Reader takes **any** text and rewrites it at the right level, pulls out the
+vocabulary worth learning, and tracks what actually stuck over time.
 
----
-
-## 3. Escopo da v1
-
-### Está dentro
-
-- Importar um texto adaptado (JSON) produzido pelo Claude Code.
-- Gerar o prompt de adaptação a partir do perfil do usuário (nível + vocabulário).
-- Validar a cobertura de nível do texto importado, em código.
-- Ler o texto adaptado na interface, clicar em palavras e salvá-las.
-- Flashcards com repetição espaçada (FSRS) e tela de revisão com teclado.
-- Painel com evolução de vocabulário, revisões e cobertura por nível.
-- Exportar o baralho para o Anki (CSV).
-
-### Está fora (v2 ou depois)
-
-- Transcrição de áudio e vídeo (Whisper, `yt-dlp`).
-- Chamada direta à API do Claude de dentro do app.
-- Aplicativo ou sincronização com o celular.
-- Multiusuário, login, deploy em servidor.
-- Geração de exercícios além das perguntas de compreensão que vêm no JSON.
+**The v1 user:** one person (the author), a native speaker of Brazilian Portuguese
+studying English. No authentication, no multi-user, no cloud.
 
 ---
 
-## 4. Fluxo principal
+## 2. The product thesis
+
+Three claims the MVP exists to test:
+
+1. **The level has to be verified, not requested.** An LLM told to "write at A1" gets
+   it wrong silently. The guarantee comes from comparing the generated text against a
+   frequency list, in code, and demanding a minimum coverage.
+2. **The CEFR level is coarse; personal vocabulary is what matters.** The goal is to
+   adapt for "the 1,000 words of A1 **plus** the 312 this user has proved they know",
+   introducing five to eight new words per text (i+1).
+3. **Learned vocabulary is the only progress indicator that does not lie.** Not
+   "streak days", not "texts read": words that survive spaced repetition.
+
+---
+
+## 3. Scope of v1
+
+### In
+
+- Importing an adapted text (JSON) produced by Claude Code.
+- Generating the adaptation prompt from the user's profile (level + vocabulary).
+- Validating the imported text's level coverage, in code.
+- Reading the adapted text in the interface, clicking words and saving them.
+- Flashcards with spaced repetition (FSRS) and a keyboard-driven review screen.
+- A dashboard with vocabulary growth, reviews and coverage by level.
+- Exporting the deck to Anki (CSV).
+
+### Out (v2 or later)
+
+- Audio and video transcription (Whisper, `yt-dlp`).
+- Calling the Claude API directly from inside the app.
+- A phone app or phone synchronisation.
+- Multi-user, login, server deployment.
+- Generating exercises beyond the comprehension questions that come in the JSON.
+
+---
+
+## 4. The main flow
 
 ```
                       ┌──────────────────────────────┐
-                      │  Claude Code (no repositório)│
-                      │  /adapt A1 materia.txt       │
+                      │  Claude Code (in the repo)   │
+                      │  /adapt A1 article.txt       │
                       └──────────────┬───────────────┘
-                                     │ 1. lê o perfil
+                                     │ 1. reads the profile
                     ┌────────────────┴────────────────┐
-                    │  reader profile --level A1      │  ← CLI do próprio app
-                    │  (nível, exceções, alvo i+1)    │
+                    │  reader profile --level A1      │  ← the app's own CLI
+                    │  (level, exceptions, i+1 target)│
                     └────────────────┬────────────────┘
-                                     │ 2. adapta e grava
-                              inbox/2026-09-21-groenlandia.json
-                                     │ 3. importa e valida
+                                     │ 2. adapts and writes
+                              inbox/2026-09-21-greenland.json
+                                     │ 3. imports and validates
                     ┌────────────────┴────────────────┐
-                    │  reader import  /  botão na UI  │
-                    │  cobertura 96% A1 · 4 fora      │
+                    │  reader import  /  button in UI │
+                    │  coverage 96% A1 · 4 outside    │
                     └────────────────┬────────────────┘
                                      │
               ┌──────────────────────┴──────────────────────┐
-              │  Web (localhost:8000)                        │
-              │  ler → clicar palavras → revisar → painel     │
-              └──────────────────────────────────────────────┘
+              │  Web (localhost:8000)                       │
+              │  read → click words → review → dashboard    │
+              └─────────────────────────────────────────────┘
 ```
 
-O ponto importante: **o app não chama LLM nenhum na v1.** Ele gera o prompt, recebe
-o JSON e faz todo o trabalho determinístico (validação, lematização, agendamento,
-estatística). Quem paga e executa a inteligência é o Claude Code, que você já tem
-aberto no repositório.
+The important point: **the app calls no LLM at all in v1.** It generates the prompt,
+receives the JSON and does all the deterministic work (validation, lemmatisation,
+scheduling, statistics). What pays for and runs the intelligence is Claude Code, which
+you already have open in the repository.
 
 ---
 
-## 5. Decisões técnicas
+## 5. Technical decisions
 
-| Área | Decisão | Por quê |
+| Area | Decision | Why |
 |---|---|---|
-| Linguagem | Python 3.12+ | Ecossistema linguístico (spaCy, wordfreq) é o coração do projeto |
-| Web | FastAPI + Jinja2 + HTMX | Server-rendered, quase sem JS; a revisão precisa de teclado, não de SPA |
-| Banco | SQLite (arquivo `graded-reader.db`) via SQLModel | Um processo, um arquivo, backup é `cp` |
-| SRS | `fsrs` (py-fsrs) | Algoritmo do Anki moderno; não reimplementar SM-2 |
-| Lematização | spaCy `en_core_web_sm` | `running → run`, evita cartões duplicados |
-| Frequência | NGSL (2.809 palavras) + `wordfreq` | NGSL cobre A1–B1; Zipf do wordfreq cobre o resto |
+| Language | Python 3.12+ | The linguistic ecosystem (spaCy, wordfreq) is the heart of the project |
+| Web | FastAPI + Jinja2 + HTMX | Server-rendered, almost no JS; review needs a keyboard, not an SPA |
+| Database | SQLite (a `graded-reader.db` file) via SQLModel | One process, one file, backup is `cp` |
+| SRS | `fsrs` (py-fsrs) | Modern Anki's algorithm; do not reimplement SM-2 |
+| Lemmatisation | spaCy `en_core_web_sm` | `running → run`, avoids duplicate cards |
+| Frequency | NGSL (2,809 words) + `wordfreq` | NGSL covers A1–B1; wordfreq's Zipf covers the rest |
 | CLI | Typer | `reader profile`, `reader import`, `reader analyze` |
-| Testes | pytest | Só na camada de léxico e SRS (ver §11) |
-| Formatação | ruff | — |
+| Tests | pytest | Only in the lexicon and SRS layers (see §11) |
+| Formatting | ruff | — |
 
-`[aberto]` Se a interface web travar o progresso, existe a saída de emergência de
-fazer a v0 em Streamlit e migrar depois — mas isso custa a tela de revisão boa.
+`[open]` If the web interface stalls progress, the emergency exit is to build v0 in
+Streamlit and migrate later — but that costs the good review screen.
 
-### Dependências
+### Dependencies
 
 ```
 fastapi, uvicorn[standard], jinja2, python-multipart, sqlmodel,
 fsrs, spacy, wordfreq, typer, httpx, pytest, ruff
 ```
-Mais o modelo: `python -m spacy download en_core_web_sm`.
+Plus the model: `python -m spacy download en_core_web_sm`.
 
 ---
 
-## 6. Camada de vocabulário (o núcleo)
+## 6. The vocabulary layer (the core)
 
-Módulo `graded_reader/lexicon.py`. É a peça que dá valor ao resto; construa primeiro.
+Module `graded_reader/lexicon.py`. It is the piece that gives the rest its value; build
+it first.
 
-### Bandas de nível
+### Level bands
 
-Cada palavra recebe uma banda a partir de duas fontes, nesta ordem:
+Every word gets a band from two sources, in this order:
 
-1. **NGSL**, pelo rank de frequência (arquivo CSV, licença CC BY-SA 4.0 — a atribuição
-   vai no README):
+1. **NGSL**, by frequency rank (CSV file, licensed CC BY-SA 4.0 — the attribution goes
+   in the README):
    - rank 1–500 → `A1`
    - 501–1000 → `A2`
    - 1001–2000 → `B1`
    - 2001–2809 → `B2`
-2. **wordfreq**, pelo Zipf, para o que não está na NGSL:
+2. **wordfreq**, by Zipf, for whatever is not in the NGSL:
    - Zipf ≥ 4.0 → `B2`
    - 3.0 ≤ Zipf < 4.0 → `C1`
    - Zipf < 3.0 → `C2`
-3. Nomes próprios, números e siglas (detectados pelo POS do spaCy) → `NA`, fora da conta.
+3. Proper nouns, numbers and acronyms (detected through spaCy's POS) → `NA`, out of the
+   count.
 
-Os limites acima são chutes calibrados; guarde-os em `data/bands.toml` para poder
-ajustar sem mexer no código. Depois de uns 20 textos, compare a sensação de
-dificuldade com a cobertura calculada e recalibre.
+The cuts above are calibrated guesses; keep them in `data/bands.toml` so they can be
+adjusted without touching code. After twenty texts or so, compare how hard they felt
+against the measured coverage and recalibrate.
 
-### Cobertura
+### Coverage
 
 ```python
 def coverage(text: str, level: str, known: set[str]) -> CoverageReport
 ```
-Retorna: total de tokens, tokens dentro do nível-alvo, tokens fora (com lema, banda e
-frequência no texto), percentual de cobertura, e a lista de candidatos a cartão
-(palavras fora do nível **ou** acima da banda-alvo que não estão em `known`).
+Returns: total tokens, tokens inside the target level, tokens outside it (with lemma,
+band and frequency in the text), the coverage percentage, and the list of card
+candidates (words outside the level **or** above the target band that are not in
+`known`).
 
-**Critério de aceitação de um texto:** cobertura ≥ 95% para A1/A2, ≥ 92% para B1/B2,
-≥ 90% para C1/C2. Abaixo disso, a UI marca o texto como "fora do nível" e sugere
-rodar `/adapt` de novo. Não bloqueie a importação — mostre o número e deixe decidir.
+**Acceptance criterion for a text:** coverage ≥ 95% for A1/A2, ≥ 92% for B1/B2, ≥ 90%
+for C1/C2. Below that, the UI marks the text "out of level" and suggests running
+`/adapt` again. Do not block the import — show the number and let the reader decide.
 
 ---
 
-## 7. Contrato do arquivo de importação
+## 7. The import file contract
 
-Este é o contrato mais importante do projeto: é a fronteira entre o Claude Code e o app.
-Arquivo JSON em `inbox/`, nome livre, UTF-8.
+This is the most important contract in the project: it is the border between Claude
+Code and the app. A JSON file in `inbox/`, any name, UTF-8.
 
 ```json
 {
@@ -171,10 +174,10 @@ Arquivo JSON em `inbox/`, nome livre, UTF-8.
   "title": "Iceland Turns Carbon Into Stone",
   "source": {
     "kind": "url",
-    "value": "https://example.com/materia",
-    "original_text": "texto integral original, como foi colado"
+    "value": "https://example.com/article",
+    "original_text": "the whole original text, as it was pasted"
   },
-  "adapted_text": "Parágrafo um.\n\nParágrafo dois.",
+  "adapted_text": "Paragraph one.\n\nParagraph two.",
   "glossary": [
     {
       "en": "underground",
@@ -186,61 +189,64 @@ Arquivo JSON em `inbox/`, nome livre, UTF-8.
   "questions": [
     { "q": "What do they put into the rock?", "a": "Carbon dioxide and water." }
   ],
-  "prompt_used": "o prompt completo, para reprodutibilidade",
+  "prompt_used": "the complete prompt, for reproducibility",
   "generated_at": "2026-09-21T22:40:00-03:00"
 }
 ```
 
-Regras do importador:
-- `schema`, `level`, `adapted_text` obrigatórios; o resto tolerado se faltar.
-- Arquivo inválido vai para `inbox/rejeitados/` com um `.error.txt` ao lado. Nunca
-  apague a entrada do usuário.
-- Arquivo importado com sucesso vai para `inbox/processados/`.
-- Importação é idempotente por hash do `adapted_text`: reimportar não duplica.
-- Após importar, rodar a validação de cobertura e gravar o resultado no registro do texto.
+Importer rules:
+- `schema`, `level`, `adapted_text` are required; the rest is tolerated if missing.
+- An invalid file goes to `inbox/rejected/` with an `.error.txt` beside it. Never
+  destroy the user's input.
+- A successfully imported file goes to `inbox/processed/`.
+- Importing is idempotent by the hash of `adapted_text`: re-importing does not
+  duplicate.
+- After importing, run the coverage validation and store the result on the text's
+  record.
 
 ---
 
-## 8. Geração do prompt
+## 8. Generating the prompt
 
-Comando `reader profile --level A1 [--new-words 8]` imprime o bloco de contexto que o
-Claude Code injeta no prompt de adaptação. Ele contém:
+The command `reader profile --level A1 [--new-words 8]` prints the context block that
+Claude Code injects into the adaptation prompt. It contains:
 
-- O nível-alvo e suas regras gramaticais (tabela fixa em `data/levels.toml`, uma
-  entrada por nível: orçamento de vocabulário, estruturas permitidas, tamanho de frase).
-- **Exceções para cima:** até 40 palavras que o usuário já domina e que estão acima do
-  nível-alvo — podem ser usadas à vontade.
-- **Alvo i+1:** 5 a 8 palavras da banda imediatamente superior, escolhidas entre as mais
-  frequentes que o usuário ainda não tem no baralho — devem aparecer no texto e no glossário.
-- **Reforço:** até 10 palavras que estão em aprendizado e vencem nos próximos 3 dias —
-  se couberem naturalmente, devem reaparecer no texto.
+- The target level and its grammar rules (a fixed table in `data/levels.toml`, one
+  entry per level: vocabulary budget, allowed structures, sentence length).
+- **Exceptions upward:** up to 40 words the user already knows that sit above the
+  target level — they may be used freely.
+- **The i+1 target:** five to eight words from the band immediately above, chosen among
+  the most frequent ones the user does not yet have in the deck — they must appear in
+  the text and in the glossary.
+- **Reinforcement:** up to 10 words that are being learned and fall due within the next
+  three days — if they fit naturally, they should reappear in the text.
 
-**Não mande a lista inteira do nível no prompt.** O modelo já tem boa noção das faixas
-de frequência do inglês; o que ele não tem é o seu perfil. A conferência rigorosa
-acontece depois, em código.
+**Do not send the level's whole word list in the prompt.** The model already has a good
+sense of English frequency bands; what it does not have is your profile. The strict
+check happens afterwards, in code.
 
-O comando de barra do Claude Code fica em `.claude/commands/adapt.md` no próprio
-repositório e descreve estes passos: rodar `reader profile`, ler o texto de origem,
-adaptar, escrever o JSON em `inbox/`, rodar `reader import` e reportar a cobertura.
+The Claude Code slash command lives at `.claude/commands/adapt.md` in the repository
+itself and describes these steps: run `reader profile`, read the source text, adapt it,
+write the JSON into `inbox/`, run `reader import` and report the coverage.
 
 ---
 
-## 9. Modelo de dados
+## 9. Data model
 
 ```
 word
   id              INTEGER PK
-  lemma           TEXT UNIQUE NOT NULL     -- forma base, minúscula
-  display         TEXT NOT NULL            -- como apareceu no texto
+  lemma           TEXT UNIQUE NOT NULL     -- base form, lowercase
+  display         TEXT NOT NULL            -- as it appeared in the text
   pt              TEXT
   example_en      TEXT
   example_pt      TEXT
   band            TEXT                     -- A1..C2, NA
   first_text_id   INTEGER FK -> text.id
   created_at      TEXT
-  fsrs_json       TEXT NOT NULL            -- Card serializado (py-fsrs)
-  due             TEXT NOT NULL            -- desnormalizado do Card, para consultar
-  stability       REAL                     -- idem, para o painel
+  fsrs_json       TEXT NOT NULL            -- serialised Card (py-fsrs)
+  due             TEXT NOT NULL            -- denormalised from the Card, to query on
+  stability       REAL                     -- likewise, for the dashboard
   state           TEXT                     -- new | learning | review | relearning
 
 review
@@ -248,7 +254,7 @@ review
   word_id         INTEGER FK -> word.id
   rating          INTEGER                  -- 1..4 (Again, Hard, Good, Easy)
   reviewed_at     TEXT
-  log_json        TEXT                     -- ReviewLog serializado
+  log_json        TEXT                     -- serialised ReviewLog
 
 text
   id              INTEGER PK
@@ -268,138 +274,142 @@ text
 
 setting
   key             TEXT PK
-  value           TEXT                     -- nível atual, limite diário de novas, etc.
+  value           TEXT                     -- current level, daily new-card limit, etc.
 ```
 
-Guardar `fsrs_json` inteiro e denormalizar `due`/`stability`/`state` evita reimplementar
-o modelo do FSRS e ainda permite consultar a fila com SQL puro. A tabela `review` nunca
-é apagada: é dela que sai todo o painel.
+Storing the whole `fsrs_json` and denormalising `due`/`stability`/`state` avoids
+reimplementing the FSRS model while still allowing the queue to be queried in plain
+SQL. The `review` table is never deleted from: the entire dashboard comes out of it.
 
 ---
 
-## 10. Telas
+## 10. Screens
 
-Três, em `localhost:8000`. Referência visual: o protótipo já construído (três abas,
-tipografia serifada na área de leitura, painel com escada de níveis).
+Three of them, at `localhost:8000`. Visual reference: the prototype already built
+(three tabs, a serif typeface in the reading area, a dashboard with a level ladder).
 
-**Leitura** — lista dos textos importados; abrir um mostra o texto adaptado em fonte de
-leitura, com as palavras já no baralho destacadas. Clicar numa palavra abre o cartão
-lateral (lema, banda, tradução do glossário se houver) com o botão de salvar. Abaixo, o
-glossário com "salvar todas", as perguntas de compreensão com resposta escondida, e a
-faixa de cobertura ("96% dentro do A1 · 4 palavras acima").
-Ao lado, o texto original acessível em uma aba — reler o original depois de entender o
-adaptado é metade do valor do método.
+**Reading** — the list of imported texts; opening one shows the adapted text in a
+reading face, with the words already in the deck highlighted. Clicking a word opens the
+side card (lemma, band, the glossary translation if there is one) with a save button.
+Below it, the glossary with "save all", the comprehension questions with hidden
+answers, and the coverage strip ("96% inside A1 · 4 words above").
+Beside it, the original text reachable in a tab — re-reading the original after
+understanding the adapted version is half the value of the method.
 
-**Revisão** — um cartão por vez, centralizado. Frente: a palavra e o exemplo com ela
-apagada. Verso: tradução, exemplo completo, e os quatro botões do FSRS mostrando o
-intervalo que cada um produz. **Teclado obrigatório:** espaço revela, 1–4 avaliam,
-`u` desfaz a última avaliação. Sem teclado, revisar 40 cartões é sofrimento.
+**Review** — one card at a time, centred. Front: the word and the example with the word
+blanked out. Back: the translation, the full example, and the four FSRS buttons showing
+the interval each one produces. **The keyboard is mandatory:** space reveals, 1–4
+grade, `u` undoes the last grading. Without a keyboard, reviewing 40 cards is
+punishment.
 
-**Painel** — no topo, os números: palavras no baralho, dominadas (estabilidade ≥ 21
-dias), em aprendizado, revisões hoje, retenção de 30 dias.
-Depois, **a escada**: para cada nível, quantas das palavras daquela banda já estão
-dominadas, sobre o tamanho da banda. É a métrica honesta de "quanto do A1 eu tenho" —
-bem diferente de contar cartões.
-Depois, o histórico de revisões (barras, 30 dias) e a curva de retenção prevista pelo
-FSRS para os próximos 30 dias, que é o gráfico que mostra a carga de trabalho chegando.
-
----
-
-## 11. O que testar
-
-Testes só onde o erro é silencioso:
-
-- `lexicon`: lematização de formas irregulares (`went → go`, `children → child`),
-  atribuição de banda, cálculo de cobertura contra um texto fixo de referência.
-- `importer`: JSON válido, JSON quebrado, reimportação (idempotência), campos ausentes.
-- `srs`: uma sequência de avaliações produz intervalos crescentes; `Again` derruba;
-  serialização e desserialização do `Card` sobrevivem a um round-trip pelo banco.
-
-Não escreva teste de rota nem de template no MVP.
+**Dashboard** — at the top, the numbers: words in the deck, mastered (stability ≥ 21
+days), being learned, reviews today, 30-day retention.
+Then **the ladder**: for each level, how many words of that band are already mastered,
+over the size of the band. It is the honest version of "how much of A1 do I have" —
+very different from counting cards.
+Then the review history (bars, 30 days) and the retention curve FSRS predicts for the
+next 30 days, which is the chart that shows the workload coming.
 
 ---
 
-## 12. Etapas de construção
+## 11. What to test
 
-Cada etapa é utilizável sozinha e tem um critério de pronto verificável. Construa e
-teste uma por vez.
+Tests only where a mistake is silent:
 
-**M0 — Léxico (o núcleo, sem interface)**
-Projeto, dependências, NGSL baixada para `data/`, `lexicon.py` completo.
-*Pronto quando:* `reader analyze materia.txt --level A1` imprime a cobertura e a lista
-de palavras fora do nível, e os testes de lematização passam.
+- `lexicon`: lemmatisation of irregular forms (`went → go`, `children → child`), band
+  assignment, coverage computed against a fixed reference text.
+- `importer`: valid JSON, broken JSON, re-importing (idempotency), missing fields.
+- `srs`: a sequence of gradings produces growing intervals; `Again` knocks it down;
+  serialising and deserialising the `Card` survives a round trip through the database.
 
-**M1 — O laço fechado, via terminal**
-Schema e banco, `reader profile`, importador com validação, `.claude/commands/adapt.md`.
-*Pronto quando:* você roda `/adapt A1 materia.txt` no Claude Code e o texto entra no
-banco com a cobertura calculada, sem tocar em nenhuma interface.
+Do not write route or template tests in the MVP.
 
-**M2 — Leitura**
-FastAPI, telas de lista e de leitura, clicar palavra, salvar no baralho, glossário,
-perguntas.
-*Pronto quando:* você lê um texto importado e termina com 8 palavras no baralho.
+---
 
-**M3 — Revisão**
-py-fsrs integrado, fila do dia, tela de revisão com teclado, desfazer, limite diário
-de cartões novos.
-*Pronto quando:* você revisa três dias seguidos e os intervalos se comportam.
+## 12. Build milestones
 
-**M4 — Painel**
-Números, escada de níveis, histórico, curva de retenção.
-*Pronto quando:* o painel responde "quantas palavras do A1 eu já sei" com um número
-que você acredita.
+Each milestone is usable on its own and has a verifiable done criterion. Build and test
+one at a time.
 
-**M5 — Exportação Anki**
-CSV com `termo, tradução<br><i>exemplo</i>, tags` e cabeçalho `#separator:Comma`,
+**M0 — Lexicon (the core, no interface)**
+Project, dependencies, NGSL downloaded into `data/`, `lexicon.py` complete.
+*Done when:* `reader analyze article.txt --level A1` prints the coverage and the list of
+out-of-level words, and the lemmatisation tests pass.
+
+**M1 — The loop closed, from the terminal**
+Schema and database, `reader profile`, importer with validation,
+`.claude/commands/adapt.md`.
+*Done when:* you run `/adapt A1 article.txt` in Claude Code and the text lands in the
+database with its coverage computed, without touching any interface.
+
+**M2 — Reading**
+FastAPI, the list and reading screens, clicking a word, saving to the deck, the
+glossary, the questions.
+*Done when:* you read an imported text and finish with eight words in the deck.
+
+**M3 — Review**
+py-fsrs integrated, the day's queue, the keyboard-driven review screen, undo, the daily
+limit on new cards.
+*Done when:* you review three days running and the intervals behave.
+
+**M4 — Dashboard**
+The numbers, the level ladder, the history, the retention curve.
+*Done when:* the dashboard answers "how many A1 words do I know" with a number you
+believe.
+
+**M5 — Anki export**
+CSV with `term, translation<br><i>example</i>, tags` and the headers `#separator:Comma`,
 `#html:true`.
-*Pronto quando:* o arquivo importa no Anki sem ajuste manual.
+*Done when:* the file imports into Anki with no manual adjustment.
 
-Depois de M4, pare e use por duas semanas antes de escrever qualquer linha da v2. A
-calibragem das bandas e o limite diário de cartões novos só aparecem com uso real.
-
----
-
-## 13. Riscos conhecidos
-
-**A lematização vai errar.** Formas irregulares e phrasal verbs (`give up` ≠ `give`)
-vão gerar cartões estranhos. Mitigação: permitir editar o lema do cartão na interface e
-tratar expressões de múltiplas palavras como um cartão só quando vierem do glossário.
-
-**As bandas de nível são uma aproximação.** NGSL é lista de frequência geral, não mapa
-CEFR oficial. A correspondência rank → nível é calibrável de propósito; não a trate como
-verdade.
-
-**O modo manual tem fricção.** Se rodar `/adapt` toda vez incomodar, esse é exatamente
-o sinal de que vale a pena a v2 com API — e a interface `Adapter` já estará lá.
-
-**Cartões demais cedo demais.** Salvar 12 palavras por texto vira 300 cartões vencidos
-em um mês e abandono. Limite padrão: 10 cartões novos por dia, ajustável nas configurações.
+After M4, stop and use it for two weeks before writing a line of v2. Band calibration
+and the daily new-card limit only show themselves under real use.
 
 ---
 
-## 14. Design para a v2 (o que não fazer errado agora)
+## 13. Known risks
 
-Uma única abstração no MVP, definida em `graded_reader/adapters/base.py`:
+**Lemmatisation will get things wrong.** Irregular forms and phrasal verbs (`give up` ≠
+`give`) will produce strange cards. Mitigation: allow editing a card's lemma in the
+interface, and treat multi-word expressions as a single card when they come from the
+glossary.
+
+**The level bands are an approximation.** The NGSL is a general frequency list, not an
+official CEFR map. The rank → level correspondence is calibratable on purpose; do not
+treat it as truth.
+
+**The manual mode has friction.** If running `/adapt` every time becomes annoying, that
+is exactly the signal that v2 with an API is worth it — and the `Adapter` interface will
+already be there.
+
+**Too many cards too early.** Saving 12 words per text turns into 300 due cards in a
+month and abandonment. Default limit: 10 new cards a day, adjustable in the settings.
+
+---
+
+## 14. Designing for v2 (what not to get wrong now)
+
+A single abstraction in the MVP, defined in `graded_reader/adapters/base.py`:
 
 ```python
 class Adapter(Protocol):
     def adapt(self, source_text: str, profile: Profile) -> AdaptedText: ...
 ```
 
-`InboxAdapter` na v1 (lê de `inbox/`). `ApiAdapter` na v2 (chama a API do Claude com a
-mesma `Profile` e devolve o mesmo `AdaptedText`). Nada mais precisa ser abstraído —
-resista a criar camadas para banco, para renderização ou para transcrição antes de
-existir um segundo caso de uso real.
+`InboxAdapter` in v1 (reads from `inbox/`). `ApiAdapter` in v2 (calls the Claude API
+with the same `Profile` and returns the same `AdaptedText`). Nothing else needs
+abstracting — resist creating layers for the database, for rendering or for
+transcription before a second real use case exists.
 
-Para a v2 no celular, o que importa é que a regra de negócio esteja em módulos puros
-(`lexicon`, `srs`, `profile`), não dentro das rotas do FastAPI. Se isso for respeitado,
-expor uma API JSON depois é um dia de trabalho.
+For v2 on the phone, what matters is that the business rules live in pure modules
+(`lexicon`, `srs`, `profile`) and not inside the FastAPI routes. If that is respected,
+exposing a JSON API later is a day's work.
 
 ---
 
-## Fontes
+## Sources
 
-- FSRS em Python: https://github.com/open-spaced-repetition/py-fsrs (pacote `fsrs`)
+- FSRS in Python: https://github.com/open-spaced-repetition/py-fsrs (the `fsrs` package)
 - New General Service List: https://www.newgeneralservicelist.com/new-general-service-list
-  (2.809 palavras, CC BY-SA 4.0)
+  (2,809 words, CC BY-SA 4.0)
 - wordfreq: https://pypi.org/project/wordfreq/

@@ -1,38 +1,38 @@
 # Graded Reader
 
-Leitor de inglês graduado por nível, com flashcards próprios e painel de evolução.
+A graded English reader with its own flashcards and a progress dashboard.
 
-O Graded Reader pega **qualquer** texto e o reescreve no nível certo, extrai o vocabulário
-que vale a pena aprender, e acompanha o que foi realmente aprendido ao longo do
-tempo.
+Graded Reader takes **any** text and rewrites it at the right level, pulls out the
+vocabulary worth learning, and tracks what actually stuck over time.
 
-Todo o trabalho determinístico é do app — validação, lematização, medição de
-cobertura, agendamento, estatística. A reescrita é do Claude Code, pelo binário
-que você já tem instalado, e você pode acioná-la pela web ou pelo terminal.
+Every deterministic piece of work belongs to the app — validation, lemmatisation,
+coverage measurement, scheduling, statistics. The rewriting belongs to Claude Code,
+through the binary you already have installed, and you can trigger it from the web
+or from the terminal.
 
-## Por onde começar
+## Where to start
 
-- [`docs/como-funciona.md`](docs/como-funciona.md) — **como o sistema funciona hoje**:
-  cada tela, o que é o glossário, como a fila do review decide o que mostrar, e
-  o que cada número do painel afirma. Comece por aqui para usar.
-- [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — a especificação completa: o problema,
-  a tese do produto, o contrato de importação, o modelo de dados e as etapas.
-- [`docs/v2-ideias.md`](docs/v2-ideias.md) — o que foi levantado para a v2, com custo e
-  ressalva de cada ideia. **Nada decidido.**
+- [`docs/how-it-works.md`](docs/how-it-works.md) — **how the system works today**:
+  every screen, what the glossary is, how the review queue decides what to show,
+  and what each number on the dashboard claims. Start here to use it.
+- [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — the full specification: the
+  problem, the product thesis, the import contract, the data model and the milestones.
+- [`docs/v2-ideas.md`](docs/v2-ideas.md) — what has been raised for v2, with the cost
+  and the catch of each idea. **Nothing decided.**
 
-## Estado
+## State
 
-| Etapa | O que entrega | Status |
+| Milestone | What it delivers | Status |
 |---|---|---|
-| M0 | Léxico: bandas, lematização, cobertura, `reader analyze` | pronto |
-| M1 | O laço fechado via terminal: banco, `profile`, importador | pronto |
-| M2 | Leitura na web: ler, clicar palavra, salvar no baralho | pronto |
-| M3 | Revisão: fila do dia, teclado, desfazer, limite diário | pronto |
-| M4 | Painel: números, escada de níveis, histórico, retenção | pronto |
-| M5 | Exportação para o Anki | pronto |
-| — | Adaptar pela web (antecipa o `ApiAdapter` do §14) | pronto |
+| M0 | Lexicon: bands, lemmatisation, coverage, `reader analyze` | done |
+| M1 | The loop closed from the terminal: database, `profile`, importer | done |
+| M2 | Reading on the web: read, click a word, save it to the deck | done |
+| M3 | Review: the day's queue, keyboard, undo, daily limit | done |
+| M4 | Dashboard: numbers, the level ladder, history, retention | done |
+| M5 | Anki export | done |
+| — | Adapting from the web (anticipates §14's `ApiAdapter`) | done |
 
-## Como rodar
+## Running it
 
 ```
 uv venv --python 3.11
@@ -40,168 +40,168 @@ uv pip install -e ".[lexicon,db,srs,web,adapt,dev]"
 python -m spacy download en_core_web_sm
 ```
 
-O caminho normal é `reader serve` e o botão **Add a text** — cola um endereço ou
-o artigo, escolhe o nível, e pronto. O mesmo laço pelo terminal, quando quiser
-controle:
+The normal path is `reader serve` and the **Add a text** button — paste an address or
+the article, pick the level, done. The same loop from the terminal, when you want
+control:
 
 ```
-/adapt A1 materia.txt
+/adapt A1 article.txt
 ```
 
-Ele roda `reader profile`, adapta o texto, grava o JSON em `inbox/`, roda
-`reader import` e reporta a cobertura. Os comandos por trás dos dois:
+It runs `reader profile`, adapts the text, writes the JSON into `inbox/`, runs
+`reader import` and reports the coverage. The commands behind both doors:
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `reader profile --level A1` | Imprime o bloco de contexto para o prompt de adaptação |
-| `reader import` | Valida, mede e grava o que está no `inbox/` |
-| `reader texts` | Lista o que já entrou |
-| `reader analyze arq.txt --level A1` | Mede um texto solto, sem gravar nada |
-| `reader serve` | Sobe a interface de leitura em http://127.0.0.1:8000 |
-| `reader export` | Escreve o baralho como CSV para o Anki |
+| `reader profile --level A1` | Prints the context block for the adaptation prompt |
+| `reader import` | Validates, measures and stores whatever is in `inbox/` |
+| `reader texts` | Lists what has come in |
+| `reader analyze file.txt --level A1` | Measures a loose text without storing anything |
+| `reader serve` | Serves the reading interface at http://127.0.0.1:8000 |
+| `reader export` | Writes the deck as CSV for Anki |
 
-`analyze` sai com código 1 quando o texto não alcança o limiar — é isso que permite
-ao laço saber que precisa tentar de novo. Aceita `-` para ler da entrada padrão e
-`--known arquivo.txt` (um lema por linha).
+`analyze` exits with code 1 when a text misses the threshold — that is what lets the
+loop know it has to try again. It accepts `-` to read from standard input and
+`--known file.txt` (one lemma per line).
 
-## Como funciona
+## How it works
 
-O passo a passo de cada tela está em
-[`docs/como-funciona.md`](docs/como-funciona.md) — o que é o glossário, como a
-fila do review decide o que mostrar, e o que cada número do painel afirma. Em
-uma frase cada:
+The walkthrough of every screen is in
+[`docs/how-it-works.md`](docs/how-it-works.md) — what the glossary is, how the
+review queue decides what to show, and what each dashboard number claims. One
+sentence each:
 
-- **Biblioteca** — *Add a text* recebe um endereço ou o artigo colado e adapta
-  sozinho; *Import waiting texts* e *Or paste the document* são as portas sem
-  terminal para o `inbox/`.
-- **Leitura** — clicar numa palavra cria um cartão de palavra, selecionar um
-  trecho cria um cartão de frase. O **glossário** embaixo do texto é o
-  vocabulário que a adaptação escolheu ensinar, e *Save all* manda tudo de uma
-  vez para o baralho sem reiniciar o agendamento de quem já estava lá.
-- **Review** — a fila do dia, movida pelo teclado: **espaço** revela, **1–4**
-  avaliam, **u** desfaz. O limite diário de cartões novos (padrão 10) conta
-  primeiras aparições, não avaliações.
-- **Painel** — a escada de níveis, o histórico, a retenção, e a exportação para
-  o Anki.
+- **Library** — *Add a text* takes an address or a pasted article and adapts it
+  on its own; *Import waiting texts* and *Or paste the document* are the doors
+  into `inbox/` that need no terminal.
+- **Reading** — clicking a word makes a word card, selecting a passage makes a
+  sentence card. The **glossary** under the text is the vocabulary the adaptation
+  chose to teach, and *Save all* sends the lot to the deck without resetting the
+  schedule of anything already there.
+- **Review** — the day's queue, driven by the keyboard: **space** reveals,
+  **1–4** grade, **u** undoes. The daily limit on new cards (10 by default)
+  counts first appearances, not gradings.
+- **Dashboard** — the level ladder, the history, the retention, and the Anki
+  export.
 
-## Decisões que parecem detalhe
+## Decisions that look like details
 
-A adaptação pela web é o `Adapter` do §14 com uma segunda implementação, o
-`ClaudeCliAdapter`, ao lado do `InboxAdapter`. O §3 do MVP punha isso na v2, e o
-§13 diz que a fricção do modo manual é o sinal de que a v2 vale a pena — o sinal
-veio cedo.
+Adapting from the web is §14's `Adapter` with a second implementation, the
+`ClaudeCliAdapter`, alongside `InboxAdapter`. §3 of the MVP put this in v2, and §13
+says that the friction of the manual mode is the signal that v2 is worth it — the
+signal came early.
 
-**Não é a API paga.** O adaptador chama o binário `claude` que já está instalado
-e logado na sua máquina, então gasta o mesmo plano que digitar o comando no
-terminal. O `total_cost_usd` que o CLI reporta é o equivalente em API, não uma
-cobrança.
+**This is not the paid API.** The adapter calls the `claude` binary already installed
+and logged in on your machine, so it spends the same plan as typing the command in the
+terminal. The `total_cost_usd` the CLI reports is the API equivalent, not a charge.
 
-- **O processo filho roda sem ferramenta nenhuma** (`--tools ""`). O artigo que
-  você manda adaptar é texto não confiável; um agente com `Write` e `Bash` lendo
-  uma página hostil é um risco diferente de um modelo sem mãos. De quebra,
-  consome ~3× menos da sua janela, e contorna um defeito real: rodar o `/adapt`
-  por `claude -p` **com** ferramentas falha de forma reproduzível no CLI 2.0.76
+- **The child process runs with no tools at all** (`--tools ""`). The article you
+  send to be adapted is untrusted text; an agent holding `Write` and `Bash` while
+  reading a hostile page is a different risk from a model with no hands. As a bonus
+  it consumes ~3× less of your window, and it works around a real defect: running
+  `/adapt` through `claude -p` **with** tools fails reproducibly on CLI 2.0.76
   (`API Error 400: tool_use ids must be unique`).
-- **O prompt vai por stdin.** Como argumento ele é truncado em silêncio no limite
-  de linha de comando do Windows — o processo sai com código 0 e não imprime
-  nada.
-- **A resposta é desembrulhada antes de virar JSON.** O modelo cerca o JSON em
-  ```` ```json ```` por mais que se peça o contrário. O `--json-schema` do CLI
-  seria a solução certa e hoje devolve 400.
+- **The prompt goes in through stdin.** As an argument it is silently truncated at
+  Windows' command-line limit — the process exits 0 and prints nothing.
+- **The answer is unwrapped before it is parsed.** The model fences the JSON in
+  ```` ```json ```` however firmly you ask it not to. The CLI's `--json-schema`
+  would be the right fix and today returns 400.
 
-O `/adapt` continua existindo como caminho manual, e é o mesmo bloco de perfil nos
-dois — se divergirem, as adaptações ficariam sutilmente piores por uma das portas
-e nada avisaria.
+`/adapt` still exists as the manual path, and both doors use the same profile block —
+if they diverged, adaptations would get subtly worse through one of them and nothing
+would say so.
 
-Os arquivos estáticos são servidos com a impressão digital do conteúdo na URL
-(`app.css?v=fb6014d5`). Sem isso, o navegador guarda a folha de estilo antiga e
-uma mudança de CSS chega como tela quebrada — que foi exatamente o que
-aconteceu, e é um bug que se parece com CSS errado sendo cache velho.
+Static files are served with the content's fingerprint in the URL
+(`app.css?v=fb6014d5`). Without it the browser keeps the old stylesheet and a CSS
+change arrives as a broken screen — which is exactly what happened, and it is a bug
+that looks like wrong CSS while being a stale cache.
 
-A **exportação para o Anki** sai por `reader export` ou pelo botão no painel, e
-os dois produzem o mesmo arquivo byte a byte. Detalhes que decidem entre
-importar direto e ter que mexer no diálogo:
+The **Anki export** comes out of `reader export` or the button on the dashboard, and
+both produce the same file byte for byte. The details that decide between importing
+straight away and having to fight the dialog:
 
-- **`#tags column:3`.** Sem essa linha o Anki lê a terceira coluna como um
-  *campo*, não como tags — e num tipo de nota de dois campos ela some.
-- **O escape vem antes da marcação, nunca depois.** Com `#html:true` o Anki lê
-  cada campo como HTML, então um `&` na tradução tem que virar `&amp;` — mas o
-  `<br>` e o `<i>` que o app insere precisam sobreviver literais. Invertido, a
-  formatação aparece como sinais de maior e menor em cada cartão.
-- **`#deck` e `#notetype` só pré-selecionam "se existirem"**, diz o manual. O
-  nome do deck vai; o do tipo de nota não, porque o padrão se chama diferente em
-  cada idioma do Anki (`--notetype` se você quiser).
-- A primeira coluna é a palavra, e o Anki usa o primeiro campo como identidade
-  da nota — então reexportar **atualiza** as mesmas notas em vez de dobrar o
-  baralho.
+- **`#tags column:3`.** Without that line Anki reads the third column as a *field*,
+  not as tags — and in a two-field note type it disappears.
+- **Escaping comes before markup, never after.** With `#html:true` Anki reads every
+  field as HTML, so an `&` in the translation has to become `&amp;` — but the `<br>`
+  and `<i>` the app inserts have to survive literally. The other way round, the
+  formatting shows up as angle brackets on every card.
+- **`#deck` and `#notetype` only preselect "if they exist"**, says the manual. The
+  deck name goes; the note type's does not, because the default is called something
+  different in every language Anki ships (`--notetype` if you want it).
+- The first column is the word, and Anki uses the first field as the note's identity
+  — so re-exporting **updates** the same notes instead of doubling the deck.
 
-Referência: [Text Files, no manual do
-Anki](https://docs.ankiweb.net/importing/text-files.html).
+Reference: [Text Files, in the Anki
+manual](https://docs.ankiweb.net/importing/text-files.html).
 
-## Limites conhecidos
+## Known limits
 
-`reader serve` escuta só em localhost, e deve continuar assim: **não há
-autenticação nenhuma neste app**, por decisão do MVP. Qualquer um que alcance a
-porta lê e altera o baralho.
+`reader serve` listens on localhost only, and it should stay that way: **there is no
+authentication in this app at all**, by decision of the MVP. Anyone who reaches the
+port reads and changes the deck.
 
-O app busca qualquer endereço http(s) que você digitar, inclusive de rede local.
-Como só você digita, e o app só escuta em localhost, isso é aceitável aqui — mas
-é uma porta que não existe se um dia houver um segundo usuário.
+The app fetches any http(s) address you type, including ones on the local network.
+Because only you type them, and the app only listens on localhost, that is acceptable
+here — but it is a door that would not exist if there were ever a second user.
 
-`import` nunca apaga a sua entrada: arquivo inválido vai para `inbox/rejected/`
-com um `.error.txt` ao lado dizendo o motivo, e reimportar o mesmo texto não
-duplica (a identidade é o hash do inglês adaptado).
+`import` never destroys your input: an invalid file goes to `inbox/rejected/` with an
+`.error.txt` beside it saying why, and re-importing the same text does not duplicate
+it (identity is the hash of the adapted English).
 
-Os portões, na ordem em que valem:
+The gates, in the order they hold:
 
 ```
 ruff format . && ruff check . && mypy && pytest
 ```
 
-## Calibragem
+## Calibration
 
-`data/bands.toml` guarda os cortes que transformam frequência em nível CEFR. Eles
-são **chutes calibrados, não verdade**: a NGSL é uma lista de frequência geral, não
-um mapa CEFR oficial. Depois de uns 20 textos, compare a sensação de dificuldade
-com a cobertura calculada e ajuste o arquivo — sem mexer em código.
+`data/bands.toml` holds the cuts that turn frequency into a CEFR level. They are
+**calibrated guesses, not truth**: the NGSL is a general frequency list, not an
+official CEFR map. After twenty texts or so, compare how hard they felt against the
+measured coverage and adjust the file — with no code involved.
 
-Isso já aconteceu uma vez, e vale como aviso. A NGSL lematiza `their`→`they`,
-`these`→`this`, `his`→`he`, `an`→`a`; o spaCy não. Treze das palavras mais comuns
-do inglês não batiam com entrada nenhuma, caíam na escala do Zipf — que só tinha
-degrau até B2 — e eram classificadas como **B2**. Todo texto com "my" ou "your"
-perdia cobertura por isso. O conserto foram quatro linhas em `data/bands.toml`,
-com os pisos tirados da mediana de Zipf de cada faixa da NGSL (A1 5,43, A2 4,96,
-B1 4,59), **sem uma linha de código**. Os testes em `tests/test_calibration.py`
-travam isso contra os dados reais.
+This has happened once already, and it is worth keeping as a warning. The NGSL
+lemmatises `their`→`they`, `these`→`this`, `his`→`he`, `an`→`a`; spaCy does not.
+Thirteen of the commonest words in English matched no entry at all, fell through to
+the Zipf scale — which only had a floor down to B2 — and came out classified as
+**B2**. Every text with "my" or "your" in it lost coverage for that reason. The fix
+was four lines in `data/bands.toml`, with the floors taken from the median Zipf of
+each NGSL band (A1 5.43, A2 4.96, B1 4.59), **without a line of code**. The tests in
+`tests/test_calibration.py` pin it against the real data.
 
-Outro aviso, de uso: nível de gramática e nível de vocabulário são coisas
-diferentes, e a cobertura só mede o segundo. O texto `exemplo/bees-adaptado.txt`
-foi escrito com gramática A1 — frases de 6 a 10 palavras, sem subordinação — e
-mede 74,7% em A1, 90,6% em B1 e 100% em B2. O assunto é que carrega o
-vocabulário: `bee` sozinho é 6,1% do texto e é B2. Um tema não vira A1 só porque
-as frases encurtaram.
+Another warning, about use: grammar level and vocabulary level are different things,
+and coverage only measures the second. The text `exemplo/bees-adaptado.txt` was
+written with A1 grammar — sentences of six to ten words, no subordination — and it
+measures 74.7% at A1, 90.6% at B1 and 100% at B2. The subject is what carries the
+vocabulary: `bee` alone is 6.1% of the text and it is B2. A topic does not become A1
+just because the sentences got shorter.
 
-## Dados
+## Data
 
-O diretório de dados é `data/`, e `GRADED_READER_DATA_DIR` sobrescreve — é o que permite
-aos testes rodarem contra um diretório temporário sem tocar nas listas reais.
+The data directory is `data/`, and `GRADED_READER_DATA_DIR` overrides it — that is
+what lets the tests run against a temporary directory without touching the real
+lists.
 
-- `data/ngsl.csv` — **New General Service List** (2.809 palavras), de
+- `data/ngsl.csv` — the **New General Service List** (2,809 words), from
   [newgeneralservicelist.com](https://www.newgeneralservicelist.com/new-general-service-list),
-  por Browne, Culligan e Phillips. Licença **CC BY-SA 4.0**. O arquivo publicado
-  é o `NGSL_12_stats.csv`, guardado aqui sem alteração.
-- `data/bands.toml` — os cortes de banda e os limiares de cobertura.
-- `data/levels.toml` — o orçamento gramatical de cada nível, citado no prompt.
+  by Browne, Culligan and Phillips. Licensed **CC BY-SA 4.0**. The published file is
+  `NGSL_12_stats.csv`, kept here unchanged.
+- `data/bands.toml` — the band cuts and the coverage thresholds.
+- `data/levels.toml` — the grammar budget of each level, quoted in the prompt.
 
-O banco é um arquivo SQLite (`graded-reader.db`, sobrescrevível por `GRADED_READER_DB`) e o
-`inbox/` por `GRADED_READER_INBOX_DIR`. Nenhum dos dois vai para o git.
+The database is a SQLite file (`graded-reader.db`, overridable with
+`GRADED_READER_DB`) and the inbox with `GRADED_READER_INBOX_DIR`. Neither goes into
+git.
 
-Frequência fora da NGSL vem do [wordfreq](https://pypi.org/project/wordfreq/).
+Frequency for anything outside the NGSL comes from
+[wordfreq](https://pypi.org/project/wordfreq/).
 
-## Licenças
+## Licences
 
-O código está sob Apache 2.0 ([`LICENSE`](LICENSE)). Dois arquivos dentro do
-repositório **não** são deste projeto e têm termos próprios — a lista NGSL em
-`data/` (CC BY-SA 4.0, que é *share-alike* e não é a licença do código) e o htmx
-em `src/graded_reader/web/static/` (0BSD). Os dois estão detalhados no
+The code is under the MIT License ([`LICENSE`](LICENSE)). Two files inside the
+repository are **not** this project's work and carry their own terms — the NGSL list
+in `data/` (CC BY-SA 4.0, which is *share-alike* and is not the code's licence) and
+htmx in `src/graded_reader/web/static/` (0BSD). Both are set out in
 [`NOTICE`](NOTICE).
