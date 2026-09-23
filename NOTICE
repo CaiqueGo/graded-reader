@@ -1,7 +1,7 @@
 Graded Reader — a graded English reader
 Copyright 2026 CaiqueGo (https://github.com/CaiqueGo)
 
-Licensed under the Apache License, Version 2.0. See LICENSE.
+Licensed under the MIT License. See LICENSE.
 
 ================================================================================
 Third-party material redistributed inside this repository
@@ -27,7 +27,7 @@ The file is redistributed with its contents unchanged; only the filename
 differs, from NGSL_12_stats.csv to ngsl.csv. It is the 2,809-word list with its
 SFI frequency ranks, which is what this project turns into CEFR bands.
 
-Note that CC BY-SA 4.0 is a share-alike licence and is not the Apache licence
+Note that CC BY-SA 4.0 is a share-alike licence and is not the MIT licence
 that covers the code. Anyone redistributing this word list, or a work adapted
 from it, is bound by those terms rather than by LICENSE.
 
