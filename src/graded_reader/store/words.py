@@ -135,3 +135,11 @@ def by_sentence(session: Session, sentence: str) -> Word | None:
         select(Word).where(col(Word.kind) == "sentence").where(col(Word.sentence) == sentence)
     )
     return session.exec(statement).first()
+
+
+def created_between(session: Session, start: datetime, end: datetime) -> int:
+    """How many cards were saved in ``[start, end)``."""
+    statement = (
+        select(Word.id).where(col(Word.created_at) >= start).where(col(Word.created_at) < end)
+    )
+    return len(list(session.exec(statement)))

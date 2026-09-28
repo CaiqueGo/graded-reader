@@ -12,10 +12,12 @@ from graded_reader.store.models import Setting
 
 KEY_LEVEL = "level"
 KEY_DAILY_NEW = "daily_new_cards"
+KEY_MINUTES = "minutes_per_day"
 
 DEFAULTS = {
     KEY_LEVEL: "A1",
     KEY_DAILY_NEW: "10",
+    KEY_MINUTES: "30",
 }
 
 

@@ -181,3 +181,34 @@ def test_a_database_that_never_had_the_old_shape_is_left_alone(tmp_path: Path) -
 
     assert list(tmp_path.glob("fresh.db.*.backup")) == [], "nothing to back up"
     assert {"kind", "sentence"} <= columns(fresh)
+
+
+def test_the_archive_column_reaches_a_library_made_before_it(tmp_path: Path) -> None:
+    """A nullable column, so it can be added to rows that already exist."""
+    path = tmp_path / "library.db"
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE text (
+            id INTEGER NOT NULL PRIMARY KEY, title VARCHAR NOT NULL, level VARCHAR NOT NULL,
+            source_kind VARCHAR NOT NULL, source_value VARCHAR NOT NULL,
+            original_text VARCHAR NOT NULL, adapted_text VARCHAR NOT NULL,
+            glossary_json VARCHAR NOT NULL, questions_json VARCHAR NOT NULL,
+            prompt_used VARCHAR NOT NULL, coverage_pct FLOAT, out_of_level VARCHAR NOT NULL,
+            content_hash VARCHAR NOT NULL, created_at DATETIME NOT NULL
+        );
+        INSERT INTO text VALUES (1, 'Kept', 'A1', 'paste', '', '', 'Some text.', '[]', '[]',
+                                 '', 0.97, '[]', 'abc', '2026-09-01 09:00:00');
+        """
+    )
+    connection.commit()
+    connection.close()
+
+    database.engine_for(path)
+
+    connection = sqlite3.connect(path)
+    names = {row[1] for row in connection.execute("PRAGMA table_info(text)")}
+    kept = connection.execute("SELECT title, archived_at FROM text").fetchall()
+    connection.close()
+    assert "archived_at" in names
+    assert kept == [("Kept", None)], "the text is still there, and not archived"

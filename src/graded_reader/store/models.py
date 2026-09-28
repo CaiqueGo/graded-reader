@@ -14,7 +14,7 @@ single offset is chronological order.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from sqlalchemy import Index, text
@@ -40,6 +40,8 @@ class SourceKind(StrEnum):
     URL = "url"
     FILE = "file"
     PASTE = "paste"
+    #: Written for the course from a work situation. There is no original.
+    GENERATED = "generated"
 
 
 class CardKind(StrEnum):
@@ -100,6 +102,10 @@ class Text(SQLModel, table=True):
     out_of_level: str = "[]"
     content_hash: str = Field(unique=True, index=True)
     created_at: datetime = Field(default_factory=utcnow)
+    #: Hidden from the library, never deleted. Nullable rather than a boolean on
+    #: purpose: ``_add_missing_columns`` can add a nullable column to a deck that
+    #: already exists, and it cannot add a NOT NULL boolean.
+    archived_at: datetime | None = None
 
 
 class Word(SQLModel, table=True):
@@ -189,3 +195,85 @@ class Setting(SQLModel, table=True):
 
     key: str = Field(primary_key=True)
     value: str
+
+
+class CourseDayKind(StrEnum):
+    """What the day's text is."""
+
+    #: Written for the course, about a situation at work.
+    WORK = "work"
+    #: Real news on one of the reader's topics, adapted to their level.
+    NEWS = "news"
+
+
+class CourseDayStatus(StrEnum):
+    """Where the preparation of a day's text stands."""
+
+    PREPARING = "preparing"
+    READY = "ready"
+    FAILED = "failed"
+
+
+class CourseDay(SQLModel, table=True):
+    """One day of the course, and the text prepared for it.
+
+    ``day`` is unique, and that index is the whole of the guard against
+    preparing the same day twice. Preparation is triggered from more than one
+    place -- the server starting, the Today screen opening, the end of the
+    previous session -- and a text costs minutes of the reader's plan to write.
+    A check in Python before inserting would leave a gap between the check and
+    the insert; the claim is one statement against this index instead, see
+    ``store.days.claim``.
+    """
+
+    __tablename__ = "course_day"
+
+    id: int | None = Field(default=None, primary_key=True)
+    day: date = Field(unique=True, index=True)
+    kind: str = CourseDayKind.WORK.value
+    status: str = CourseDayStatus.PREPARING.value
+    text_id: int | None = Field(default=None, foreign_key="text.id")
+    #: The work situation the text was written about, so the next one differs.
+    situation: str = ""
+    #: The news topic, for the same reason.
+    topic: str = ""
+    #: Why a news day became a work day, or why the day failed.
+    note: str = ""
+    claimed_at: datetime = Field(default_factory=utcnow)
+    prepared_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
+class Feed(SQLModel, table=True):
+    """A news feed the reader chose, under one of their topics.
+
+    The app ships with none. Which sites are worth reading about games or
+    football is a matter of taste, and a default list would be a guess about
+    someone else's.
+    """
+
+    __tablename__ = "feed"
+
+    id: int | None = Field(default=None, primary_key=True)
+    topic: str = Field(index=True)
+    url: str = Field(unique=True)
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class ExerciseAttempt(SQLModel, table=True):
+    """One answer to one exercise of a course day.
+
+    Append-only. A second try at the same exercise is a new row, and the
+    summary reads the latest one -- trying again after a mistake is the point,
+    and it should not erase that the mistake happened.
+    """
+
+    __tablename__ = "exercise_attempt"
+
+    id: int | None = Field(default=None, primary_key=True)
+    day_id: int = Field(foreign_key="course_day.id", index=True)
+    kind: str
+    target: str
+    answer: str = ""
+    correct: bool = False
+    created_at: datetime = Field(default_factory=utcnow)
