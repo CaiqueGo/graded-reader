@@ -47,6 +47,10 @@ the position).
 not, the next step up is a TTS API — and then there is a cost per character, and it is
 worth keeping the audio on disk, because the same text re-read should not pay twice.
 
+**It is also a prerequisite.** The [V3 speaking tutor](v3-speaking-tutor.md) speaks its
+replies through this same piece, so audio is not only worth doing early — V3 cannot
+start without it.
+
 ---
 
 ## 3. Review looking more like Anki

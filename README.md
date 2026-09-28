@@ -19,6 +19,9 @@ or from the terminal.
   problem, the product thesis, the import contract, the data model and the milestones.
 - [`docs/v2-ideas.md`](docs/v2-ideas.md) — what has been raised for v2, with the cost
   and the catch of each idea. **Nothing decided.**
+- [`docs/v3-speaking-tutor.md`](docs/v3-speaking-tutor.md) — V3: a speaking tutor that
+  talks at your level, about a text or freely, and feeds what you say back into the
+  deck. **Direction decided, design open.**
 
 ## State
 
