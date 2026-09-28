@@ -236,6 +236,20 @@ the Library.
 *Done when:* you open the app on most days for two weeks because it is ready, not
 because you remembered to feed it.
 
+*Status (2026-09-28):* **built.** The code is done; the criterion above is not, and
+cannot be yet — it is two weeks of use. Two things the first real run showed, and both
+point at later phases rather than at bugs:
+
+- **The first written A1 text measured 86%, under A1's 95% threshold.** It was written
+  "for A1" and the measurement disagreed, which is the thesis working as intended. The
+  likely cause is the one this plan already names: work vocabulary (*team*, *project*,
+  *developer*) sits above A1 in the NGSL. That is phase 2's placement test with
+  technical vocabulary, and maybe a work-vocabulary list, arriving as evidence rather
+  than as a prediction.
+- **The machine it runs on had no English voice installed**, only Portuguese ones. The
+  player now refuses to read English in a Portuguese voice and says how to add one —
+  but listening, which this plan calls central, depends on a setting outside the app.
+
 **Phase 2 — Knowing where you are.**
 The placement test with technical vocabulary, the new-card load driven by the time
 budget, and the goal line on the dashboard.

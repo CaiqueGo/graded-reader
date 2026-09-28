@@ -26,10 +26,12 @@ choose to save while reading.
 
 | Screen | Address | What for |
 |---|---|---|
-| Library | `/` | Adding texts and opening the ones already in |
-| Reading | `/texts/{id}` | Reading, saving words, saving sentences, the glossary |
+| Today | `/` | The day's session, in order: review, listen, read, practise, wrap up |
+| Library | `/library` | Your own texts, the course's texts, and the archive |
+| Reading | `/texts/{id}` | Reading, listening, saving words, saving sentences, the glossary |
 | Review | `/review` | The day's queue |
 | Dashboard | `/dashboard` | Whether it is working, and the Anki export |
+| Settings | `/settings` | Level, minutes a day, news feeds |
 
 Start it with `reader serve`, at http://127.0.0.1:8000.
 
@@ -50,6 +52,56 @@ reader can follow.
 
 ---
 
+## Today: the day, in order
+
+The front door, and the reason the app stopped being a tool you have to feed. You
+open it and the day is already decided. Four steps, top to bottom:
+
+1. **Review.** The cards due today come first: they are a fixed cost, and they keep
+   the words you already saved.
+2. **Listen, then read.** The day's text, with a play button. Listen once without the
+   text in front of you, then open it and read — clicking words, selecting sentences,
+   as on any text.
+3. **Practise.** Exercises made from the words the text was written to teach: first
+   a gap to fill (the word taken out of its example, with the translation as a hint),
+   then a sentence of your own using the word. Answers are checked by the same
+   lemmatiser that measures coverage — any form of the word counts, a copy of the
+   example does not — and you can try again; the latest try is the one counted.
+4. **Wrap up.** Reviews done, exercises right out of how many, cards saved. *Finish
+   the day* closes it and starts writing tomorrow's text. It is offered only once the
+   day's text is ready.
+
+### Where the day's text comes from
+
+It alternates. **Work days** get a text written from scratch about a situation you
+will meet at work as a developer — introducing yourself, the stand-up, a code review,
+an interview question. The situations are listed by level in `data/situations.toml`,
+taken in order and not repeated until the list runs out. **News days** take the
+newest unread article from your feeds, one topic at a time, and adapt it. With no
+feeds, every day is a work day; a news day whose feeds cannot be read falls back to a
+work text and says why.
+
+Either way the text goes through the same import as everything else and is
+**measured, not trusted**: a text written for A1 shows its real coverage, and if the
+measurement says it is above your level, the reading page says so.
+
+### It is ready before you ask
+
+A text takes a model call — one to three minutes on your plan. So it is written
+ahead: when the server starts, when the Today screen opens on a day with nothing
+started, and when you finish a day (for tomorrow). If you open the page while it is
+being written, the page says so and fills itself in when it is ready; the reviews are
+there to do in the meantime.
+
+Two things make that safe to trigger from several places at once. Each day can be
+claimed for writing **exactly once** — a single statement against a unique index, so
+two triggers at the same moment cannot both start a model call. And a day that
+fails — the plan's limit, a network error — is recorded with the reason and is
+**retried only when you press the button**: reloading the page does not spend the
+plan again on something that just failed.
+
+---
+
 ## Library: where texts come from
 
 Three doors, all leading to the same place:
@@ -66,6 +118,11 @@ text does not duplicate it: identity is the hash of the adapted English.
 
 A text that lands below the coverage threshold **comes in anyway**, marked `out of
 level`. The app shows you the number and leaves the decision with you.
+
+**Archiving** takes a text out of the list without deleting it — from the reading
+page, *Archive this text*. The archive is one link away in the Library, and a text can
+be put back. Nothing is ever deleted, because the cards saved from a text keep a
+reference to it.
 
 ---
 
@@ -229,6 +286,25 @@ minutes apart; counting them as retention inflates the number without saying any
 
 And, as above, **C1 and C2 get no percentage**. A confidently wrong dashboard is worse
 than no dashboard, because nothing on the screen tells you to doubt it.
+
+---
+
+## Settings
+
+- **Level** — the level the course writes and adapts at.
+- **Minutes a day** — stored and shown on Today. Sizing the day's work to it is the
+  next phase of the course; for now it is a reminder, and the screen says so.
+- **News feeds** — RSS or Atom feeds, each under a topic you name. The app ships with
+  none. A feed is not checked when you add it; a feed that cannot be read shows up as
+  the reason a news day fell back to work.
+
+### Listening needs an English voice
+
+The audio is the browser's own speech synthesis — no file, no cost. It needs an
+**English voice installed**. Without one, the play button stays off and says so,
+instead of letting the browser read English with its default voice, which on a
+Portuguese Windows is a Portuguese one. On Windows: Settings → Time & language →
+Speech → Add voices → English (United States).
 
 ---
 

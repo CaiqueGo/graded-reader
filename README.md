@@ -32,6 +32,7 @@ or from the terminal.
 | M4 | Dashboard: numbers, the level ladder, history, retention | done |
 | M5 | Anki export | done |
 | — | Adapting from the web (anticipates §14's `ApiAdapter`) | done |
+| Course 1 | The Today screen: the day's text written ahead, audio, exercises | built — its test is two weeks of use |
 
 ## Running it
 
@@ -41,9 +42,10 @@ uv pip install -e ".[lexicon,db,srs,web,adapt,dev]"
 python -m spacy download en_core_web_sm
 ```
 
-The normal path is `reader serve` and the **Add a text** button — paste an address or
-the article, pick the level, done. The same loop from the terminal, when you want
-control:
+The normal path is `reader serve` and the **Today** screen: the day's text is written
+for you while the server is on, and the page says what to do next. To bring a text of
+your own, the Library's **Add a text** takes an address or the article. The same loop
+from the terminal, when you want control:
 
 ```
 /adapt A1 article.txt
@@ -72,6 +74,9 @@ The walkthrough of every screen is in
 review queue decides what to show, and what each dashboard number claims. One
 sentence each:
 
+- **Today** — the front door. Reviews first, then a text written or adapted for the
+  day, heard before it is read, then exercises on its words, then the day's summary.
+  The text is prepared ahead: when the server starts, and when you finish a day.
 - **Library** — *Add a text* takes an address or a pasted article and adapts it
   on its own; *Import waiting texts* and *Or paste the document* are the doors
   into `inbox/` that need no terminal.
@@ -82,6 +87,7 @@ sentence each:
 - **Review** — the day's queue, driven by the keyboard: **space** reveals,
   **1–4** grade, **u** undoes. The daily limit on new cards (10 by default)
   counts first appearances, not gradings.
+- **Settings** — the level, the minutes a day, and the news feeds per topic.
 - **Dashboard** — the level ladder, the history, the retention, and the Anki
   export.
 
@@ -145,6 +151,19 @@ port reads and changes the deck.
 The app fetches any http(s) address you type, including ones on the local network.
 Because only you type them, and the app only listens on localhost, that is acceptable
 here — but it is a door that would not exist if there were ever a second user.
+
+**Links from news feeds are different, and are guarded.** A feed's links are chosen by
+whoever runs the feed, not by you, so a hostile feed could point the app at an address
+inside your network. Everything fetched on a feed's behalf goes through a client that
+refuses any host not resolving to a public address, on every request, redirects
+included. One gap is named in `news.py` rather than hidden: a host that answers the
+check and the connection with different addresses (DNS rebinding) gets past it.
+
+**Reading aloud needs an English voice installed.** The audio is the browser's own
+speech synthesis. Without an English voice it refuses to speak rather than read
+English with the system's default voice — on a Portuguese Windows, a Portuguese one.
+Add one in Settings → Time & language → Speech; Chrome and Edge also offer online
+voices, which send the text to their provider to be spoken.
 
 `import` never destroys your input: an invalid file goes to `inbox/rejected/` with an
 `.error.txt` beside it saying why, and re-importing the same text does not duplicate
