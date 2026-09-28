@@ -24,6 +24,12 @@
   </li>
   {% endfor %}
 </ul>
+{% elif archived %}
+<div class="empty">
+  <p>Nothing archived.</p>
+  <p class="hint">Archive a text from its reading page to take it out of the library
+    without losing it.</p>
+</div>
 {% else %}
 <div class="empty">
   <p>Nothing imported yet.</p>

@@ -3,8 +3,16 @@
 
 {% block content %}
 <div class="library-head">
-  <h1 class="page-title">Library</h1>
+  <h1 class="page-title">{% if archived %}Archive{% else %}Library{% endif %}</h1>
+  {% if archived %}
   <div class="library-actions">
+    <a class="secondary" href="/library">&larr; Back to the library</a>
+  </div>
+  {% else %}
+  <div class="library-actions">
+    {% if archived_count %}
+    <a class="link-button" href="/library?archived=true">Archive ({{ archived_count }})</a>
+    {% endif %}
     <button class="primary" type="button"
             onclick="const p = document.querySelector('#add-text'); p.hidden = !p.hidden;">
       Add a text
@@ -13,6 +21,7 @@
       <button class="secondary" type="submit">Import waiting texts</button>
     </form>
   </div>
+  {% endif %}
 </div>
 
 {# Where texts come from. This app never adapts anything itself -- section 3 of

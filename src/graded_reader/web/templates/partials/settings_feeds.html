@@ -1,0 +1,31 @@
+<h2 class="section-title">News feeds</h2>
+<p class="panel-lead">
+  Every other day the course reads the news instead of writing about work: the
+  newest article from your feeds, one topic at a time, adapted to your level.
+  It ships with no feeds &mdash; add the RSS or Atom feeds of sites you like.
+</p>
+
+{% if view.feeds %}
+<ul class="feeds">
+  {% for feed in view.feeds %}
+  <li class="feed">
+    <span class="pill feed-topic">{{ feed.topic }}</span>
+    <span class="feed-url">{{ feed.url }}</span>
+    <form hx-post="/settings/feeds/{{ feed.id }}/delete" hx-target="#settings-feeds" hx-swap="innerHTML">
+      <button class="link-button" type="submit">remove</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint">No feeds yet, so every day is a work situation.</p>
+{% endif %}
+
+<form class="feed-form" hx-post="/settings/feeds" hx-target="#settings-feeds" hx-swap="innerHTML">
+  <input name="topic" placeholder="topic, e.g. games" maxlength="40" required>
+  <input name="url" type="url" placeholder="https://example.com/feed.xml" maxlength="2000" required>
+  <button class="secondary" type="submit">Add feed</button>
+</form>
+{% if error %}<p class="flag-out">{{ error }}</p>{% endif %}
+<p class="hint">A feed is not checked when you add it. If it cannot be read, the
+  day it is used says so and falls back to a work situation.</p>

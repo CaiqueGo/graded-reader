@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Settings - Graded Reader{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Settings</h1>
+
+<section class="panel" id="settings-plan">
+  {% include "partials/settings_plan.html" %}
+</section>
+
+<section class="panel" id="settings-feeds">
+  {% include "partials/settings_feeds.html" %}
+</section>
+{% endblock %}

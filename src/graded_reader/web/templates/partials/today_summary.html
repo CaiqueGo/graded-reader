@@ -1,0 +1,34 @@
+{# How the day went. Each number says what it counts: "4 of 7 right" is not
+   "4 exercises", and the difference matters to anyone reading it at a glance. #}
+<h2 class="section-title">4. Wrap up</h2>
+<dl class="today-summary">
+  <div><dt>Reviewed today</dt><dd>{{ view.summary.reviewed_today }}</dd></div>
+  <div><dt>Exercises right</dt>
+    <dd>{{ view.summary.exercises_right }} of {{ view.summary.exercises_total }}
+      {% if view.summary.exercises_answered < view.summary.exercises_total %}
+      <span class="hint">({{ view.summary.exercises_answered }} answered)</span>
+      {% endif %}
+    </dd></div>
+  <div><dt>Cards saved today</dt><dd>{{ view.summary.words_saved_today }}</dd></div>
+</dl>
+
+{% if view.finished %}
+<p class="today-done">Done for today.</p>
+<p class="hint">
+  Tomorrow's text:
+  {% if view.tomorrow_status == "ready" %}ready.
+  {% elif view.tomorrow_status == "preparing" %}being written now, while the server is on.
+  {% elif view.tomorrow_status == "failed" %}could not be prepared &mdash; you can try again tomorrow.
+  {% else %}it will be written when you open the app.
+  {% endif %}
+</p>
+{% elif view.ready %}
+<form hx-post="/today/finish" hx-target="#today-summary" hx-swap="innerHTML">
+  <button class="primary" type="submit">Finish the day</button>
+</form>
+<p class="hint">Finishing starts writing tomorrow's text now, so it is ready when you come back.</p>
+{% else %}
+{# Not offered before there is a day to finish: finishing starts tomorrow's text,
+   and doing that while today's is still being written runs two at once. #}
+<p class="hint">You can finish the day once today's text is ready.</p>
+{% endif %}

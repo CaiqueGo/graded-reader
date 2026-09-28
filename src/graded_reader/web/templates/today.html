@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Today - Graded Reader{% endblock %}
+
+{% block content %}
+{# The front door. Everything the day holds, in the order it should be done:
+   reviews first, because they are a fixed cost and they keep yesterday's words;
+   then the text, heard before it is read; then the words, used; then the end
+   of the day. The reader should never have to decide what to do next. #}
+<div class="today-head">
+  <h1 class="page-title">Today</h1>
+  <p class="today-meta">
+    {{ view.date_label }}
+    &middot; <span class="pill band-{{ view.level }}">{{ view.level }}</span>
+    &middot; your plan: {{ view.minutes }} minutes a day
+  </p>
+</div>
+
+<ol class="today-steps">
+  <li class="today-step{% if view.reviews_done %} is-done{% endif %}">
+    <h2 class="section-title">1. Review</h2>
+    {% if view.reviews_done %}
+    <p>Nothing left to review today{% if view.reviews.reviewed_today %} &mdash;
+      {{ view.reviews.reviewed_today }} done{% endif %}.</p>
+    {% else %}
+    <p>{{ view.reviews.due }} due &middot; {{ view.reviews.new }} new</p>
+    <p><a class="primary" href="/review">Start reviewing</a></p>
+    <p class="hint">Reviews come first: they are what keeps the words you already saved.
+      If today's text is still being written, it will be ready by the time you finish.</p>
+    {% endif %}
+  </li>
+
+  <li class="today-step" id="today-text">
+    {% include "partials/today_text.html" %}
+  </li>
+
+  <li class="today-step" id="today-summary"
+      hx-get="/today/summary" hx-trigger="exercise-answered from:body, text-ready from:body"
+      hx-swap="innerHTML">
+    {% include "partials/today_summary.html" %}
+  </li>
+</ol>
+{% endblock %}

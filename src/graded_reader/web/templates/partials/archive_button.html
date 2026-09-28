@@ -1,0 +1,12 @@
+{# Archiving hides a text from the library and never deletes it: cards saved
+   from it keep pointing at a row that still exists. #}
+{% if archived %}
+<form class="archive" hx-post="/texts/{{ text_id }}/unarchive" hx-target="this" hx-swap="outerHTML">
+  <span class="hint">Archived.</span>
+  <button class="link-button" type="submit">Put it back in the library</button>
+</form>
+{% else %}
+<form class="archive" hx-post="/texts/{{ text_id }}/archive" hx-target="this" hx-swap="outerHTML">
+  <button class="link-button" type="submit">Archive this text</button>
+</form>
+{% endif %}

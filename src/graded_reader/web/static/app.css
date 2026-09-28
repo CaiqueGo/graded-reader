@@ -849,3 +849,80 @@ a.secondary { text-decoration: none; display: inline-block; line-height: 1.4; }
   background: var(--card);
   color: var(--ink);
 }
+
+/* --- today ----------------------------------------------------------------- */
+
+.today-head { margin-bottom: 1.5rem; }
+.today-head .page-title { margin-bottom: 0.25rem; }
+.today-meta { margin: 0; color: var(--ink-soft); font-size: 0.9rem; }
+
+.today-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; }
+.today-step {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  padding: 1.25rem 1.5rem;
+}
+.today-step > * + * { margin-top: 0.6rem; }
+.today-step p { margin-bottom: 0; }
+.today-step.is-done { border-left: 3px solid var(--accent); }
+.today-step a.primary { text-decoration: none; display: inline-block; line-height: 1.4; }
+
+.today-kind { font-size: 0.85rem; color: var(--ink-soft); }
+.today-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; margin: 0.4rem 0 0; }
+.today-practise { margin-top: 1.75rem !important; }
+.today-practise.is-waiting { color: var(--ink-faint); }
+.today-done { font-family: var(--serif); font-size: 1.1rem; color: var(--accent); }
+
+.today-summary { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; margin: 0.75rem 0; }
+.today-summary dt { font-size: 0.8rem; color: var(--ink-faint); }
+.today-summary dd { margin: 0; font-size: 1.1rem; }
+
+/* --- exercises ------------------------------------------------------------- */
+
+.exercises { display: grid; gap: 0.75rem; margin-top: 0.75rem; }
+.exercise { border-top: 1px solid var(--line); padding-top: 0.75rem; }
+.exercise-form > * + * { margin-top: 0.4rem; }
+.exercise-prompt { font-family: var(--serif); font-size: 1.05rem; margin: 0; }
+.exercise-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+.exercise-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: var(--paper);
+}
+.exercise-feedback { font-size: 0.9rem; margin: 0; }
+.exercise-feedback.is-right { color: var(--accent); }
+.exercise-feedback.is-wrong { color: var(--above); }
+
+/* --- audio and the reading tools ----------------------------------------- */
+
+.audio { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.reader-tools { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0 0.75rem; }
+.archive { display: flex; align-items: baseline; gap: 0.5rem; }
+
+/* --- settings -------------------------------------------------------------- */
+
+.settings-form, .feed-form { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
+.field { display: grid; gap: 0.2rem; font-size: 0.85rem; color: var(--ink-soft); }
+.field select, .field input, .feed-form input {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+.feed-form input[name="url"] { flex: 1; min-width: 14rem; }
+.feeds { list-style: none; margin: 0 0 1rem; padding: 0; }
+.feed { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.feed-url { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.85rem; color: var(--ink-soft); }
+
+@media (max-width: 40rem) {
+  .today-step { padding: 1rem; }
+  .exercise-row { flex-direction: column; align-items: stretch; }
+}

@@ -1,0 +1,120 @@
+{# The text read aloud by the browser's own speech synthesis.
+
+   No audio file, no API, nothing sent anywhere: the voice is whatever English
+   voice the operating system has. Good enough to start with, and free -- if it
+   is not good enough for the ear, a TTS service is the next step, with its
+   cost per character.
+
+   The text is queued one sentence at a time. Chrome's online voices stop
+   speaking a single long utterance partway through without any error, and a
+   queue of short ones sidesteps that.
+
+   Without an English voice it refuses to speak rather than fall back. The
+   browser's fallback is the system's default voice, and on a Portuguese
+   Windows that is a Portuguese voice reading English with Portuguese sounds --
+   worse than silence for someone learning how English sounds.
+
+   Expects ``audio_text`` and ``audio_rate`` in the context. #}
+<div class="audio" data-audio data-rate="{{ audio_rate }}">
+  <button type="button" class="secondary audio-play" data-audio-play>&#9654; Listen</button>
+  <button type="button" class="link-button" data-audio-stop hidden>Stop</button>
+  <span class="hint" data-audio-status></span>
+  <script type="application/json" data-audio-text>{{ audio_text|tojson }}</script>
+</div>
+<script>
+  (function () {
+    const synth = window.speechSynthesis;
+
+    function englishVoice() {
+      const voices = synth.getVoices();
+      return voices.find(function (v) { return v.lang === 'en-US'; })
+        || voices.find(function (v) { return (v.lang || '').startsWith('en'); })
+        || null;
+    }
+
+    function sentences(text) {
+      return text.split(/\n\s*\n|(?<=[.!?])\s+/)
+        .map(function (s) { return s.trim(); })
+        .filter(Boolean);
+    }
+
+    document.querySelectorAll('[data-audio]').forEach(function (box) {
+      if (box.dataset.bound) return;
+      box.dataset.bound = '1';
+
+      const play = box.querySelector('[data-audio-play]');
+      const stop = box.querySelector('[data-audio-stop]');
+      const status = box.querySelector('[data-audio-status]');
+
+      if (!synth) {
+        play.disabled = true;
+        status.textContent = 'This browser cannot read aloud.';
+        return;
+      }
+
+      const text = JSON.parse(box.querySelector('[data-audio-text]').textContent || '""');
+      const rate = parseFloat(box.dataset.rate) || 1;
+
+      /* Voices can arrive after the page does, so this runs again when they do.
+         An empty list means "not loaded yet", not "none installed". */
+      function checkVoices() {
+        const voices = synth.getVoices();
+        if (!voices.length) return;
+        const missing = !englishVoice();
+        play.disabled = missing;
+        status.textContent = missing
+          ? 'There is no English voice on this computer, so the text is not read aloud. '
+            + 'On Windows: Settings → Time & language → Speech → Add voices '
+            + '→ English (United States). Chrome and Edge also offer online English voices.'
+          : '';
+      }
+      checkVoices();
+      synth.addEventListener('voiceschanged', checkVoices);
+
+      function reset(label) {
+        play.innerHTML = label;
+        stop.hidden = true;
+      }
+
+      play.addEventListener('click', function () {
+        if (synth.speaking && synth.paused) {
+          synth.resume();
+          play.innerHTML = '&#10074;&#10074; Pause';
+          return;
+        }
+        if (synth.speaking) {
+          synth.pause();
+          play.innerHTML = '&#9654; Resume';
+          return;
+        }
+        const voice = englishVoice();
+        if (!voice) { checkVoices(); return; }
+        synth.cancel();
+        const parts = sentences(text);
+        parts.forEach(function (part, index) {
+          const utterance = new SpeechSynthesisUtterance(part);
+          utterance.lang = 'en-US';
+          utterance.rate = rate;
+          utterance.voice = voice;
+          if (index === parts.length - 1) {
+            utterance.onend = function () { reset('&#9654; Listen again'); };
+          }
+          synth.speak(utterance);
+        });
+        play.innerHTML = '&#10074;&#10074; Pause';
+        stop.hidden = false;
+      });
+
+      stop.addEventListener('click', function () {
+        synth.cancel();
+        reset('&#9654; Listen');
+      });
+    });
+
+    /* Leaving the page must not leave the voice talking over the next one. */
+    if (synth && !window.__audioCancelOnLeave) {
+      window.__audioCancelOnLeave = true;
+      window.addEventListener('pagehide', function () { synth.cancel(); });
+    }
+  })();
+</script>

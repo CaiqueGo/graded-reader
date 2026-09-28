@@ -15,9 +15,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlmodel import Session
 
-from graded_reader import anki, deck, jobs, library, reading, review, sources
+from graded_reader import anki, course, deck, jobs, library, preparation, reading, review, sources
 from graded_reader import dashboard as dashboard_module
 from graded_reader.adapters.inbox import InboxError
+from graded_reader.course import CourseError
 from graded_reader.library import ImportResult
 from graded_reader.reading import ReadingError
 from graded_reader.review import ReviewError
@@ -49,16 +50,182 @@ def render(request: Request, name: str, **context: object) -> HTMLResponse:
     return response
 
 
+# --- today ---------------------------------------------------------------------------
+
+
 @router.get("/", response_class=HTMLResponse)
-def library_screen(request: Request, session: SessionDep) -> HTMLResponse:
-    """The list of imported texts."""
+def today_screen(request: Request, session: SessionDep) -> HTMLResponse:
+    """The front door: the day's session, ready before it is asked for.
+
+    Opening it on a day nothing was started for starts the preparation. A day
+    that failed is not retried from here -- reloading the page should not spend
+    the plan again on something that just failed; the retry is a button.
+    """
+    view = course.today(session)
+    if view.status == "missing":
+        preparation.ensure(view.day)
+        view = view.model_copy(update={"status": "preparing"})
+    return render(request, "today.html", view=view, tab="today")
+
+
+@router.get("/today/text", response_class=HTMLResponse)
+def today_text(request: Request, session: SessionDep) -> HTMLResponse:
+    """The text section, polled while it is being prepared."""
+    view = course.today(session)
+    response = render(request, "partials/today_text.html", view=view)
+    if view.ready:
+        # The summary offers "Finish the day" only once there is a text.
+        response.headers["HX-Trigger"] = "text-ready"
+    return response
+
+
+@router.post("/today/retry", response_class=HTMLResponse)
+def retry_today(request: Request, session: SessionDep) -> HTMLResponse:
+    view = course.today(session)
+    if view.status in {"missing", "failed"}:
+        preparation.ensure(view.day)
+        view = view.model_copy(update={"status": "preparing", "note": ""})
+    return render(request, "partials/today_text.html", view=view)
+
+
+@router.post("/today/exercise", response_class=HTMLResponse)
+def answer_exercise(
+    request: Request,
+    session: SessionDep,
+    kind: Annotated[str, Form(max_length=20)],
+    target: Annotated[str, Form(max_length=100)],
+    answer: Annotated[str, Form(max_length=500)] = "",
+) -> HTMLResponse:
+    try:
+        exercise = course.answer_exercise(session, kind, target, answer)
+    except CourseError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    response = render(request, "partials/exercise.html", exercise=exercise)
+    # The day's summary listens for this and refreshes its counts.
+    response.headers["HX-Trigger"] = "exercise-answered"
+    return response
+
+
+@router.get("/today/summary", response_class=HTMLResponse)
+def today_summary(request: Request, session: SessionDep) -> HTMLResponse:
+    return render(request, "partials/today_summary.html", view=course.today(session))
+
+
+@router.post("/today/finish", response_class=HTMLResponse)
+def finish_today(request: Request, session: SessionDep) -> HTMLResponse:
+    """Close the day, and start writing tomorrow's text while the server is on.
+
+    Only a finished day starts tomorrow's. ``course.finish`` refuses a day whose
+    text is not ready, so a request sent without the button -- which is hidden
+    until then -- cannot start a second model run beside today's.
+    """
+    course.finish(session)
+    view = course.today(session)
+    if (
+        view.finished
+        and view.tomorrow_status in {"missing", "failed"}
+        and preparation.ensure_tomorrow()
+    ):
+        view = view.model_copy(update={"tomorrow_status": "preparing"})
+    return render(request, "partials/today_summary.html", view=view)
+
+
+# --- settings ------------------------------------------------------------------------
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_screen(request: Request, session: SessionDep) -> HTMLResponse:
+    return render(request, "settings.html", view=course.settings_view(session), tab="settings")
+
+
+@router.post("/settings", response_class=HTMLResponse)
+def save_settings(
+    request: Request,
+    session: SessionDep,
+    level: Annotated[str, Form(max_length=2)],
+    minutes: Annotated[int, Form(ge=1, le=1000)],
+) -> HTMLResponse:
+    error = ""
+    try:
+        course.set_level(session, level)
+        course.set_minutes(session, minutes)
+    except CourseError as problem:
+        error = str(problem)
+    return render(
+        request,
+        "partials/settings_plan.html",
+        view=course.settings_view(session),
+        saved=not error,
+        error=error,
+    )
+
+
+@router.post("/settings/feeds", response_class=HTMLResponse)
+def add_feed(
+    request: Request,
+    session: SessionDep,
+    topic: Annotated[str, Form(max_length=100)],
+    url: Annotated[str, Form(max_length=2000)],
+) -> HTMLResponse:
+    error = ""
+    try:
+        course.add_feed(session, topic, url)
+    except CourseError as problem:
+        error = str(problem)
+    return render(
+        request, "partials/settings_feeds.html", view=course.settings_view(session), error=error
+    )
+
+
+@router.post("/settings/feeds/{feed_id}/delete", response_class=HTMLResponse)
+def remove_feed(request: Request, feed_id: int, session: SessionDep) -> HTMLResponse:
+    error = ""
+    try:
+        course.remove_feed(session, feed_id)
+    except CourseError as problem:
+        error = str(problem)
+    return render(
+        request, "partials/settings_feeds.html", view=course.settings_view(session), error=error
+    )
+
+
+# --- library -------------------------------------------------------------------------
+
+
+@router.get("/library", response_class=HTMLResponse)
+def library_screen(
+    request: Request, session: SessionDep, archived: Annotated[bool, Query()] = False
+) -> HTMLResponse:
+    """The imported texts -- or, with ``?archived=true``, the ones put away."""
     return render(
         request,
         "index.html",
-        texts=reading.summaries(session),
+        texts=reading.summaries(session, archived=archived),
+        archived=archived,
+        archived_count=texts.count(session, archived=True),
         level=settings_store.get(session, settings_store.KEY_LEVEL),
-        tab="reading",
+        tab="library",
     )
+
+
+@router.post("/texts/{text_id}/archive", response_class=HTMLResponse)
+def archive_text(request: Request, text_id: int, session: SessionDep) -> HTMLResponse:
+    return _set_archived(request, session, text_id, archived=True)
+
+
+@router.post("/texts/{text_id}/unarchive", response_class=HTMLResponse)
+def unarchive_text(request: Request, text_id: int, session: SessionDep) -> HTMLResponse:
+    return _set_archived(request, session, text_id, archived=False)
+
+
+def _set_archived(
+    request: Request, session: Session, text_id: int, *, archived: bool
+) -> HTMLResponse:
+    try:
+        reading.set_archived(session, text_id, archived)
+    except ReadingError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return render(request, "partials/archive_button.html", text_id=text_id, archived=archived)
 
 
 @router.get("/texts/{text_id}", response_class=HTMLResponse)
@@ -68,7 +235,13 @@ def read_text(request: Request, text_id: int, session: SessionDep) -> HTMLRespon
         view = reading.build_view(session, text_id)
     except ReadingError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    return render(request, "text.html", view=view, tab="reading")
+    return render(
+        request,
+        "text.html",
+        view=view,
+        audio_rate=course.SPEECH_RATE.get(view.level, 1.0),
+        tab="library",
+    )
 
 
 @router.get("/texts/{text_id}/original", response_class=HTMLResponse)

@@ -1,0 +1,28 @@
+<h2 class="section-title">Your plan</h2>
+<p class="panel-lead">
+  The level the course writes and adapts at, and how long you want to study a day.
+  The course is aimed at English for working abroad as a developer, at B2.
+</p>
+
+<form class="settings-form" hx-post="/settings" hx-target="#settings-plan" hx-swap="innerHTML">
+  <label class="field">
+    <span>Level</span>
+    <select name="level">
+      {% for level in view.levels %}
+      <option value="{{ level }}" {% if level == view.level %}selected{% endif %}>{{ level }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field">
+    <span>Minutes a day</span>
+    <input type="number" name="minutes" min="5" max="240" step="5" value="{{ view.minutes }}">
+  </label>
+  <button class="primary" type="submit">Save</button>
+  {% if saved %}<span class="saved">Saved.</span>{% endif %}
+</form>
+{% if error %}<p class="flag-out">{{ error }}</p>{% endif %}
+
+{# Said plainly rather than implied: the number is stored and shown, but it does
+   not size the day yet. That is the next phase of the course plan. #}
+<p class="hint">For now the minutes are a reminder on the Today screen. Sizing the
+  day's work to them comes in the next phase of the course.</p>

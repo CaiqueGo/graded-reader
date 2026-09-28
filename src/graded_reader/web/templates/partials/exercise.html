@@ -1,0 +1,31 @@
+{# One exercise. The form replaces itself with the checked version.
+
+   The example sentence of a "write your own" exercise is shown only after an
+   answer, never before -- shown first, it is the answer to copy. #}
+<form class="exercise-form" hx-post="/today/exercise" hx-target="closest .exercise" hx-swap="innerHTML">
+  <input type="hidden" name="kind" value="{{ exercise.kind.value }}">
+  <input type="hidden" name="target" value="{{ exercise.target }}">
+
+  <p class="exercise-prompt">{{ exercise.prompt }}</p>
+  {% if exercise.hint %}<p class="hint">{{ exercise.hint }}</p>{% endif %}
+
+  <div class="exercise-row">
+    {% if exercise.kind.value == "cloze" %}
+    <input class="exercise-input" name="answer" autocomplete="off" spellcheck="false"
+           maxlength="100" value="{{ exercise.answer }}" placeholder="the missing word">
+    {% else %}
+    <textarea class="exercise-input" name="answer" rows="2" maxlength="500"
+              placeholder="Your sentence">{{ exercise.answer }}</textarea>
+    {% endif %}
+    <button class="secondary" type="submit">{% if exercise.answered %}Try again{% else %}Check{% endif %}</button>
+  </div>
+
+  {% if exercise.answered %}
+  <p class="exercise-feedback {% if exercise.correct %}is-right{% else %}is-wrong{% endif %}">
+    {{ exercise.feedback }}
+  </p>
+  {% if exercise.kind.value == "sentence" and exercise.reference %}
+  <p class="hint">An example: {{ exercise.reference }}</p>
+  {% endif %}
+  {% endif %}
+</form>

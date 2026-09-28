@@ -4,13 +4,22 @@
 {% block content %}
 <article class="reader">
   <header class="reader-head">
-    <a class="back" href="/">&larr; Library</a>
+    <a class="back" href="/library">&larr; Library</a>
     <h1 class="reader-title">{{ view.title }}</h1>
     <p class="coverage">
       <span class="band-{{ view.level }} pill">{{ view.level }}</span>
       {{ view.coverage_label }}
       {% if view.above_level %}&middot; {{ view.above_level|length }} words above{% endif %}
     </p>
+
+    <div class="reader-tools">
+      {% with audio_text=view.spoken_text, audio_rate=audio_rate %}
+      {% include "partials/audio.html" %}
+      {% endwith %}
+      {% with text_id=view.id, archived=view.archived %}
+      {% include "partials/archive_button.html" %}
+      {% endwith %}
+    </div>
 
     <div class="switch" role="tablist">
       <button class="switch-btn is-active"

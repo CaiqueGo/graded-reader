@@ -11,9 +11,11 @@
   <header class="topbar">
     <a class="brand" href="/">Graded Reader</a>
     <nav class="tabs">
-      <a href="/" class="tab {% if tab == 'reading' %}is-active{% endif %}">Reading</a>
+      <a href="/" class="tab {% if tab == 'today' %}is-active{% endif %}">Today</a>
+      <a href="/library" class="tab {% if tab == 'library' %}is-active{% endif %}">Library</a>
       <a href="/review" class="tab {% if tab == 'review' %}is-active{% endif %}">Review</a>
       <a href="/dashboard" class="tab {% if tab == 'dashboard' %}is-active{% endif %}">Dashboard</a>
+      <a href="/settings" class="tab {% if tab == 'settings' %}is-active{% endif %}">Settings</a>
     </nav>
   </header>
 

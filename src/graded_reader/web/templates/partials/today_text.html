@@ -1,0 +1,48 @@
+{# The day's text and the exercises built from it -- one block, because the
+   exercises cannot exist before the text does, and the whole block is what the
+   page polls while the text is being written. #}
+{% if view.status in ("preparing", "missing") %}
+<div hx-get="/today/text" hx-trigger="load delay:3s" hx-target="#today-text" hx-swap="innerHTML">
+  <h2 class="section-title">2. Today's text</h2>
+  <p class="adapting-title"><span class="spinner"></span> Writing today's text&hellip;</p>
+  <p class="hint">Claude Code is writing it for your level, on your plan. It usually
+    takes one to three minutes &mdash; do your reviews in the meantime.</p>
+  {% include "partials/practise_waiting.html" %}
+</div>
+
+{% elif view.status == "failed" %}
+<h2 class="section-title">2. Today's text</h2>
+<p class="flag-out">Today's text could not be prepared.</p>
+{% if view.note %}<p class="hint">{{ view.note }}</p>{% endif %}
+<form hx-post="/today/retry" hx-target="#today-text" hx-swap="innerHTML">
+  <button class="secondary" type="submit">Try again</button>
+</form>
+{% include "partials/practise_waiting.html" %}
+
+{% elif view.ready %}
+<h2 class="section-title">2. Listen, then read</h2>
+<p class="today-kind">
+  {% if view.kind == "news" %}News &middot; {{ view.topic }}{% else %}At work &middot; {{ view.situation }}{% endif %}
+</p>
+{% if view.note %}<p class="hint">{{ view.note }}</p>{% endif %}
+<h3 class="today-title">{{ view.title }}</h3>
+
+{% with audio_text=view.spoken_text, audio_rate=view.speech_rate %}
+{% include "partials/audio.html" %}
+{% endwith %}
+<p class="hint">Listen once before you read, without the text in front of you. Then
+  read it: click the words you do not know, and select a sentence worth keeping.</p>
+<p><a class="primary" href="/texts/{{ view.text_id }}">Read the text</a></p>
+
+<h2 class="section-title today-practise">3. Practise</h2>
+{% if view.exercises %}
+<p class="hint">The words this text was written to teach. First find them, then use them.</p>
+<div class="exercises">
+  {% for exercise in view.exercises %}
+  <div class="exercise">{% include "partials/exercise.html" %}</div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="hint">This text came without a glossary, so there is nothing to practise from it.</p>
+{% endif %}
+{% endif %}
