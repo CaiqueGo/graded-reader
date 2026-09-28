@@ -197,7 +197,7 @@ def humanize(delta: timedelta) -> str:
 _SUFFIXES = frozenset({"ing", "ed", "es", "er", "est", "ings", "ers"})
 
 
-def _is_inflection(surface: str, lemma: str) -> bool:
+def is_inflection(surface: str, lemma: str) -> bool:
     """Whether ``surface`` looks like an inflected form of ``lemma``.
 
     A fallback, not the main path. spaCy resolves "is running" to ``run``, but a
@@ -236,7 +236,7 @@ def blank_out(example: str, lemma: str) -> str:
     pieces = []
     for token in tokenize(example):
         surface = token.text.casefold()
-        hide = token.is_word and (token.lemma == target or _is_inflection(surface, target))
+        hide = token.is_word and (token.lemma == target or is_inflection(surface, target))
         pieces.append(BLANK if hide else token.text)
         pieces.append(token.whitespace)
     return "".join(pieces)

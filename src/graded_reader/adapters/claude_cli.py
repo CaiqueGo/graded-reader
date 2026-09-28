@@ -168,6 +168,58 @@ opinion. If a paragraph is too hard, rewrite it -- do not delete it.
 """
 
 
+#: How long a written text should be, by level. Short enough to read in one
+#: sitting and listen to twice; long enough to carry a situation and its words.
+_LENGTH_BY_LEVEL = {
+    "A1": (120, 180),
+    "A2": (150, 220),
+    "B1": (200, 300),
+    "B2": (250, 350),
+    "C1": (300, 400),
+    "C2": (300, 400),
+}
+
+
+def build_situation_prompt(situation: str, profile: Profile) -> str:
+    """The instruction for writing a text from scratch, about a work situation.
+
+    Same profile block and same reply shape as ``build_prompt``: what comes back
+    goes through the same importer and is measured against the same level, so a
+    written text is held to exactly the standard of an adapted one. Being written
+    for the level is not taken as proof of being at it.
+    """
+    low, high = _LENGTH_BY_LEVEL.get(profile.level.value, (200, 300))
+    return f"""You are writing an original English text for a graded reader course.
+The reader is a software developer preparing to work abroad in English and to pass
+job interviews. Your reply is read by a program, not a person.
+
+{render(profile)}
+
+## The situation
+
+{situation}
+
+## What to write
+
+A text set in a software development workplace, about the situation above:
+a short scene with some dialogue, an email, a chat thread or a short narrative --
+whichever suits the situation. Between {low} and {high} words. It should read like
+something the reader could really meet at work, not like a textbook exercise.
+Do not explain the text and do not address the reader.
+
+## What to return
+
+A single JSON object and nothing else, with exactly these keys:
+
+- `title`: a short English title.
+- `adapted_text`: the text. Separate paragraphs with a blank line.
+- `glossary`: a list of `{{en, pt, example_en, example_pt}}`. Every word above
+  the target level belongs here, and so do the target words, each with a
+  Portuguese translation and an English example sentence that contains the word.
+- `questions`: 3 to 5 objects of `{{q, a}}`, answerable from the text alone.
+"""
+
+
 class ClaudeCliAdapter:
     """``Adapter`` backed by the Claude Code CLI on this machine.
 
@@ -197,6 +249,38 @@ class ClaudeCliAdapter:
             raise AdapterError("there is no source text to adapt")
 
         prompt = build_prompt(source_text, profile, title_hint=title_hint)
+        return self._ask(
+            prompt,
+            profile,
+            kind=kind,
+            value=value,
+            original_text=source_text,
+            title_hint=title_hint,
+        )
+
+    def write_situation(self, situation: str, profile: Profile) -> AdaptedText:
+        """Write a new text about a work situation, in the importer's shape.
+
+        There is no original: the text did not exist before this call. The
+        situation is kept as the source value, so the course can tell which
+        situations it has already written about.
+        """
+        if not situation.strip():
+            raise AdapterError("there is no situation to write about")
+        prompt = build_situation_prompt(situation, profile)
+        return self._ask(prompt, profile, kind="generated", value=situation, original_text="")
+
+    def _ask(
+        self,
+        prompt: str,
+        profile: Profile,
+        *,
+        kind: str,
+        value: str,
+        original_text: str,
+        title_hint: str = "",
+    ) -> AdaptedText:
+        """Run one prompt and hold the reply to the import contract."""
         run = self.runner(prompt, self.cwd)
         self.last_run = run
 
@@ -216,7 +300,7 @@ class ClaudeCliAdapter:
             "schema": SCHEMA_VERSION,
             "level": profile.level.value,
             "title": payload.get("title", "") or title_hint,
-            "source": {"kind": kind, "value": value, "original_text": source_text},
+            "source": {"kind": kind, "value": value, "original_text": original_text},
             "adapted_text": payload.get("adapted_text", ""),
             "glossary": payload.get("glossary", []),
             "questions": payload.get("questions", []),

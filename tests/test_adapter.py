@@ -24,6 +24,7 @@ from graded_reader.adapters.claude_cli import (
     ClaudeCliAdapter,
     Run,
     build_prompt,
+    build_situation_prompt,
     unfence,
 )
 from graded_reader.lexicon.models import Band
@@ -192,6 +193,63 @@ def test_adapting_the_same_thing_twice_does_not_duplicate_the_text() -> None:
 
     assert first.action is ImportAction.IMPORTED
     assert second.action is ImportAction.DUPLICATE
+
+
+# --- writing about a work situation -----------------------------------------------
+
+SITUATION = "Explaining a bug to a colleague who has not seen the code"
+
+
+def test_the_writing_prompt_carries_the_situation_and_the_profile() -> None:
+    prompt = build_situation_prompt(SITUATION, profile())
+    assert SITUATION in prompt
+    assert "under" in prompt, "the i+1 targets are asked for"
+    assert "JSON" in prompt
+
+
+def test_the_length_asked_for_grows_with_the_level() -> None:
+    low = build_situation_prompt(SITUATION, profile())
+    high = build_situation_prompt(SITUATION, profile().model_copy(update={"level": Band.B2}))
+    assert "120" in low
+    assert "350" in high
+
+
+def test_a_written_text_has_no_original_and_remembers_its_situation() -> None:
+    adapter = ClaudeCliAdapter(runner=runner_returning(json.dumps(REPLY)))
+    written = adapter.write_situation(SITUATION, profile())
+
+    assert written.source.kind == "generated"
+    assert written.source.value == SITUATION
+    assert written.source.original_text == "", "nothing existed before this call"
+
+
+def test_writing_about_nothing_is_refused_before_the_model_is_called() -> None:
+    runner = runner_returning(json.dumps(REPLY))
+    with pytest.raises(AdapterError, match="no situation"):
+        ClaudeCliAdapter(runner=runner).write_situation("   ", profile())
+    assert not hasattr(runner, "prompt")
+
+
+def test_a_written_reply_that_breaks_the_contract_is_refused() -> None:
+    adapter = ClaudeCliAdapter(runner=runner_returning(json.dumps({"title": "no text"})))
+    with pytest.raises(AdapterError, match="contract"):
+        adapter.write_situation(SITUATION, profile())
+
+
+def test_a_written_text_is_measured_like_any_other_on_import() -> None:
+    result = library.write_and_import(
+        SITUATION,
+        "A1",
+        adapter=ClaudeCliAdapter(runner=runner_returning(json.dumps(REPLY))),
+    )
+
+    assert result.action is ImportAction.IMPORTED
+    assert result.coverage_pct is not None
+    with database.session() as active:
+        assert result.text_id is not None
+        stored = texts.by_id(active, result.text_id)
+        assert stored is not None
+        assert stored.source_kind == "generated"
 
 
 # --- fetching the source --------------------------------------------------------

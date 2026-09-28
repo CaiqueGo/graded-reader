@@ -1,0 +1,54 @@
+# The work situations the course writes its texts about, by level.
+#
+# The goal of the course is English for working abroad as a software developer,
+# and for the interviews that get you there. Each level is a set of situations
+# you will actually face, rather than a list of grammar -- the grammar a text may
+# use still comes from levels.toml.
+#
+# The course takes them in order, skipping whatever it wrote about recently, so
+# the order here is a suggestion of what to meet first. Edit freely: this file is
+# calibration, like bands.toml, and changing it needs no code.
+#
+# A level with no entry uses the nearest level below it that has one.
+
+[A1]
+situations = [
+  "Introducing yourself to your new team on your first day",
+  "Saying what you do: your job, your company, the language you program in",
+  "Describing your working day, from the morning to the end of the day",
+  "Asking a colleague where something is in the office, or in the codebase",
+  "Saying you are sick and cannot come to work today",
+  "Talking about your computer, your desk and the tools you use",
+]
+
+[A2]
+situations = [
+  "Telling the team at the daily stand-up what you did yesterday and what you will do today",
+  "Asking a colleague for help with a problem you cannot solve",
+  "Writing a short message to say a task will be late, and why",
+  "Explaining a small bug you found and how you fixed it",
+  "Talking about a project you worked on before this job",
+  "Organising a meeting: suggesting a time and saying who should come",
+]
+
+[B1]
+situations = [
+  "Explaining a bug to a colleague who has not seen the code",
+  "Giving an update at the stand-up when something is blocking you",
+  "Writing a clear pull request description for a change you made",
+  "Answering a job interview question: tell me about yourself",
+  "Describing the architecture of a system you know to a new team member",
+  "Asking a product manager to clarify a requirement that does not make sense",
+  "Answering a job interview question about a project you are proud of",
+]
+
+[B2]
+situations = [
+  "Disagreeing politely with a comment in a code review, and explaining why",
+  "Negotiating a deadline with a manager when the scope keeps growing",
+  "Answering a behavioural interview question about a conflict with a colleague",
+  "Explaining a technical trade-off to someone who is not an engineer",
+  "Running a short retrospective after an incident in production",
+  "Answering an interview question about a mistake you made and what you learned",
+  "Talking about your salary expectations and asking about the role in an interview",
+]

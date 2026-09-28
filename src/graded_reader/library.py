@@ -218,6 +218,33 @@ def adapt_and_import(
     return import_file(destination, db=db)
 
 
+def write_and_import(
+    situation: str,
+    level: Band | str,
+    *,
+    adapter: ClaudeCliAdapter | None = None,
+    new_words: int = DEFAULT_NEW_WORDS,
+    db: Path | None = None,
+) -> ImportResult:
+    """Have a text written about a work situation, and put it in the library.
+
+    The twin of ``adapt_and_import``, and deliberately the same path: the
+    document goes into the inbox and through ``import_file``, so a written text
+    is validated, measured for coverage and hashed exactly as an adapted one. A
+    model asked to write at A1 is not believed until the measurement agrees.
+    """
+    target = parse_level(level)
+    built = build_profile(target, new_words=new_words, db=db)
+    engine = adapter or ClaudeCliAdapter()
+
+    written = engine.write_situation(situation, built)
+
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    destination = _unique_destination(config.inbox_dir(), f"written-{stamp}.json")
+    destination.write_text(written.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
+    return import_file(destination, db=db)
+
+
 def import_pasted(raw: str, *, db: Path | None = None) -> ImportResult:
     """Import a document pasted into the browser.
 

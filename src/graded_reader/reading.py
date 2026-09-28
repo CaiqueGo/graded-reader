@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,6 +21,7 @@ from sqlmodel import Session
 from graded_reader.lexicon import LexiconError, Token, band_for, load_bands, tokenize
 from graded_reader.lexicon.models import parse_level
 from graded_reader.store import texts, words
+from graded_reader.store.models import utcnow
 
 #: A blank line separates paragraphs. Section 7 of the MVP writes an adapted
 #: text as two paragraphs divided by an empty line, so a lone newline inside
@@ -125,6 +127,9 @@ class ReadingView(BaseModel):
     questions: list[QuestionItem] = Field(default_factory=list)
     above_level: list[str] = Field(default_factory=list)
     saved_count: int = 0
+    archived: bool = False
+    #: The plain adapted text, for the browser to read aloud.
+    spoken_text: str = ""
 
     @property
     def tokens(self) -> list[RenderedToken]:
@@ -200,7 +205,7 @@ def _loads(raw: str) -> list[dict[str, Any]]:
     return parsed if isinstance(parsed, list) else []
 
 
-def _lemma_of(term: str) -> str:
+def lemma_of(term: str) -> str:
     """The lemma a glossary headword maps to.
 
     Multi-word entries keep their own surface form as the lemma: 'give up' is one
@@ -224,8 +229,8 @@ def _threshold_for(level: str) -> float | None:
         return None
 
 
-def summaries(session: Session, limit: int = 50) -> list[TextSummary]:
-    """The library list, most recent first."""
+def summaries(session: Session, limit: int = 50, *, archived: bool = False) -> list[TextSummary]:
+    """The library list, most recent first -- or the archive, with ``archived``."""
     return [
         TextSummary(
             id=row.id or 0,
@@ -236,8 +241,23 @@ def summaries(session: Session, limit: int = 50) -> list[TextSummary]:
             out_of_level_count=len(_loads(row.out_of_level)),
             created_at=row.created_at.astimezone().strftime("%Y-%m-%d %H:%M"),
         )
-        for row in texts.recent(session, limit=limit)
+        for row in texts.recent(session, limit=limit, archived=archived)
     ]
+
+
+def set_archived(
+    session: Session, text_id: int, archived: bool, *, now: datetime | None = None
+) -> None:
+    """Move a text out of the library, or back into it. Nothing is ever deleted.
+
+    Deleting would leave the cards saved from the text pointing at a row that
+    no longer exists -- ``word.first_text_id`` is a foreign key SQLite does not
+    enforce by default. Archiving has no such edge: the text stays, the library
+    simply stops listing it.
+    """
+    when = (now or utcnow()) if archived else None
+    if not texts.set_archived(session, text_id, when):
+        raise ReadingError(f"no text with id {text_id}")
 
 
 def build_view(session: Session, text_id: int) -> ReadingView:
@@ -251,7 +271,7 @@ def build_view(session: Session, text_id: int) -> ReadingView:
     glossary_raw = _loads(row.glossary_json)
 
     wanted = {token.lemma for chunk in parsed for token in chunk if token.is_word}
-    wanted |= {_lemma_of(str(entry.get("en", ""))) for entry in glossary_raw}
+    wanted |= {lemma_of(str(entry.get("en", ""))) for entry in glossary_raw}
     in_deck = words.lemmas_in(session, {lemma for lemma in wanted if lemma})
 
     return ReadingView(
@@ -271,6 +291,8 @@ def build_view(session: Session, text_id: int) -> ReadingView:
         ],
         above_level=sorted(lemma for lemma in above if lemma),
         saved_count=len(in_deck),
+        archived=row.archived_at is not None,
+        spoken_text=row.adapted_text,
     )
 
 
@@ -286,7 +308,7 @@ def _render(token: Token, in_deck: set[str], above: set[str]) -> RenderedToken:
 
 def _glossary_item(entry: dict[str, Any], in_deck: set[str]) -> GlossaryItem:
     en = str(entry.get("en", ""))
-    lemma = _lemma_of(en)
+    lemma = lemma_of(en)
     return GlossaryItem(
         en=en,
         pt=str(entry.get("pt", "")),
@@ -355,7 +377,7 @@ def build_card(session: Session, lemma: str, *, text_id: int | None = None) -> W
                 (
                     item
                     for item in _loads(row.glossary_json)
-                    if _lemma_of(str(item.get("en", ""))) == normalised
+                    if lemma_of(str(item.get("en", ""))) == normalised
                 ),
                 {},
             )

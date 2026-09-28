@@ -22,6 +22,7 @@ DEFAULT_DB_NAME = "graded-reader.db"
 NGSL_FILENAME = "ngsl.csv"
 BANDS_FILENAME = "bands.toml"
 LEVELS_FILENAME = "levels.toml"
+SITUATIONS_FILENAME = "situations.toml"
 
 PROCESSED_DIRNAME = "processed"
 REJECTED_DIRNAME = "rejected"
@@ -45,6 +46,11 @@ def bands_path() -> Path:
 def levels_path() -> Path:
     """The grammar budget of each level, quoted into the adaptation prompt."""
     return data_dir() / LEVELS_FILENAME
+
+
+def situations_path() -> Path:
+    """The work situations the course writes its texts about, by level."""
+    return data_dir() / SITUATIONS_FILENAME
 
 
 def db_path() -> Path:

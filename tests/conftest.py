@@ -78,6 +78,24 @@ grammar = "Passive voice."
 guidance = "An argument across a paragraph."
 """
 
+#: Two levels only, so the fallback to the nearest level below is exercised: B1
+#: and B2 have no entry of their own and must borrow A2's.
+SITUATIONS_TOML = """
+[A1]
+situations = [
+  "Introducing yourself to the team",
+  "Describing your working day",
+  "Asking where the kitchen is",
+]
+
+[A2]
+situations = [
+  "Explaining a small bug",
+  "Saying a task will be late",
+]
+"""
+
+
 #: A minimal file that satisfies the import contract.
 VALID_PAYLOAD: dict[str, Any] = {
     "schema": 1,
@@ -111,6 +129,7 @@ def tmp_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     (data / "ngsl.csv").write_text(FAKE_NGSL, encoding="utf-8")
     (data / "bands.toml").write_text(BANDS_TOML, encoding="utf-8")
     (data / "levels.toml").write_text(LEVELS_TOML, encoding="utf-8")
+    (data / "situations.toml").write_text(SITUATIONS_TOML, encoding="utf-8")
     monkeypatch.setenv("GRADED_READER_DATA_DIR", str(data))
     return data
 
