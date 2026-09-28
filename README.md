@@ -17,11 +17,9 @@ or from the terminal.
   and what each number on the dashboard claims. Start here to use it.
 - [`docs/graded-reader-mvp.md`](docs/graded-reader-mvp.md) — the full specification: the
   problem, the product thesis, the import contract, the data model and the milestones.
-- [`docs/v2-ideas.md`](docs/v2-ideas.md) — what has been raised for v2, with the cost
-  and the catch of each idea. **Nothing decided.**
-- [`docs/v3-speaking-tutor.md`](docs/v3-speaking-tutor.md) — V3: a speaking tutor that
-  talks at your level, about a text or freely, and feeds what you say back into the
-  deck. **Direction decided, design open.**
+- [`docs/course-plan.md`](docs/course-plan.md) — **where the project is going**: from a
+  tool you feed to a course that brings you the day's session, aimed at work English and
+  job interviews at B2. Replaces the separate v2 and V3 plans.
 
 ## State
 
