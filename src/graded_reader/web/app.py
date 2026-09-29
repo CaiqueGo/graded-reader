@@ -23,6 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from graded_reader import __version__, preparation
 from graded_reader.web.assets import static_url
+from graded_reader.web.origin import RefuseCrossSite
 from graded_reader.web.routes import router
 
 HERE = Path(__file__).parent
@@ -64,6 +65,9 @@ def create_app() -> FastAPI:
         redoc_url=None,
         lifespan=lifespan,
     )
+    # Any page on any site can post a form here; this refuses the ones that
+    # did not come from the app itself. See web.origin.
+    app.add_middleware(RefuseCrossSite)
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     app.include_router(router)
     return app

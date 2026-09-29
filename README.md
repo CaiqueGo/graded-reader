@@ -152,6 +152,26 @@ The app fetches any http(s) address you type, including ones on the local networ
 Because only you type them, and the app only listens on localhost, that is acceptable
 here — but it is a door that would not exist if there were ever a second user.
 
+**Other websites cannot make changes through your browser.** Without a login, a page on
+any site you visit could post a hidden form to `127.0.0.1:8000` — start an adaptation,
+write a day's text on your plan, change the deck — and the app would obey. Every request
+that changes something (anything but GET, HEAD and OPTIONS) is refused with a 403 unless
+the browser says it came from the app's own pages: `Sec-Fetch-Site: same-origin` (or
+`none`, for something you typed), or, from a browser too old to send that, an `Origin`
+equal to the app's own. Another port on localhost counts as another site. A request with
+neither header — curl, the tests — passes, since the threat is a page in a browser. See
+`web/origin.py`. What this does not cover:
+
+- **Reading.** A GET is never refused. Another site cannot see the answer, but opening
+  `/` does start writing today's text if nothing has started it yet — the same run your
+  own first visit would start. A failed day is retried only by its button, a POST.
+- **DNS rebinding.** A hostile name that resolves to `127.0.0.1` makes its page the
+  app's own origin as far as the browser can tell, so these headers pass — and that
+  page can read the answers too. Refusing any `Host` other than `127.0.0.1` and
+  `localhost` would close it; the app does not do that yet.
+- **Anything else on this computer.** A program running as you can call the app
+  directly, with whatever headers it likes.
+
 **Links from news feeds are different, and are guarded.** A feed's links are chosen by
 whoever runs the feed, not by you, so a hostile feed could point the app at an address
 inside your network. Everything fetched on a feed's behalf goes through a client that
