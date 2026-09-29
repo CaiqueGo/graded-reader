@@ -1,7 +1,16 @@
 {# The day's text and the exercises built from it -- one block, because the
    exercises cannot exist before the text does, and the whole block is what the
    page polls while the text is being written. #}
-{% if view.status in ("preparing", "missing") %}
+{% if view.status == "missing" %}
+{# Nothing has started today's text. The page asks for it with a POST as it
+   loads -- not the GET that brought the page, which any site can trigger. #}
+<div hx-post="/today/start" hx-trigger="load" hx-target="#today-text" hx-swap="innerHTML">
+  <h2 class="section-title">2. Today's text</h2>
+  <p class="adapting-title"><span class="spinner"></span> Starting today's text&hellip;</p>
+  {% include "partials/practise_waiting.html" %}
+</div>
+
+{% elif view.status == "preparing" %}
 <div hx-get="/today/text" hx-trigger="load delay:3s" hx-target="#today-text" hx-swap="innerHTML">
   <h2 class="section-title">2. Today's text</h2>
   <p class="adapting-title"><span class="spinner"></span> Writing today's text&hellip;</p>

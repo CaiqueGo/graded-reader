@@ -89,7 +89,9 @@ measurement says it is above your level, the reading page says so.
 
 A text takes a model call — one to three minutes on your plan. So it is written
 ahead: when the server starts, when the Today screen opens on a day with nothing
-started, and when you finish a day (for tomorrow). If you open the page while it is
+started, and when you finish a day (for tomorrow). Opening the screen does not start it
+by itself — the page asks for it with a POST as it loads, which only the app's own
+pages can send, so another site cannot spend your plan by pointing at the address. If you open the page while it is
 being written, the page says so and fills itself in when it is ready; the reviews are
 there to do in the meantime.
 

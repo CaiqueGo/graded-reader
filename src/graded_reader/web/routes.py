@@ -57,15 +57,29 @@ def render(request: Request, name: str, **context: object) -> HTMLResponse:
 def today_screen(request: Request, session: SessionDep) -> HTMLResponse:
     """The front door: the day's session, ready before it is asked for.
 
-    Opening it on a day nothing was started for starts the preparation. A day
-    that failed is not retried from here -- reloading the page should not spend
-    the plan again on something that just failed; the retry is a button.
+    A GET changes nothing and starts nothing. Any page on any site can make the
+    browser send one -- an image pointed at this address is enough -- so a GET
+    that started a model run would let another site spend the reader's plan.
+    On a day nothing was started for, the page asks for it itself, with a POST
+    to ``/today/start`` as it loads; a POST is refused unless it comes from the
+    app's own pages (web.origin).
+    """
+    return render(request, "today.html", view=course.today(session), tab="today")
+
+
+@router.post("/today/start", response_class=HTMLResponse)
+def start_today(request: Request, session: SessionDep) -> HTMLResponse:
+    """Start writing today's text, if nothing has started it yet.
+
+    Only a day that has not been started. A failed day is left alone: retrying
+    it spends the plan again, so that is the retry button's job, not something
+    a page load does on its own.
     """
     view = course.today(session)
     if view.status == "missing":
         preparation.ensure(view.day)
         view = view.model_copy(update={"status": "preparing"})
-    return render(request, "today.html", view=view, tab="today")
+    return render(request, "partials/today_text.html", view=view)
 
 
 @router.get("/today/text", response_class=HTMLResponse)

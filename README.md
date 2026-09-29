@@ -162,9 +162,10 @@ equal to the app's own. Another port on localhost counts as another site. A requ
 neither header — curl, the tests — passes, since the threat is a page in a browser. See
 `web/origin.py`. What this does not cover:
 
-- **Reading.** A GET is never refused. Another site cannot see the answer, but opening
-  `/` does start writing today's text if nothing has started it yet — the same run your
-  own first visit would start. A failed day is retried only by its button, a POST.
+- **Reading.** A GET is never refused — and no GET changes anything or starts a model
+  run, so letting it through costs nothing. Opening Today on a day with nothing started
+  does start writing its text, but the page asks for that itself with a POST as it
+  loads, and that POST is refused from any other site.
 - **Anything else on this computer.** A program running as you can call the app
   directly, with whatever headers it likes.
 

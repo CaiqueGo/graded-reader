@@ -2,8 +2,9 @@
 
 A text costs a model call -- tens of seconds, sometimes minutes -- so it has to
 exist before the reader asks for it. Preparation is started from three places:
-the server starting, the Today screen opening on a day with nothing prepared,
-and the end of a session, for tomorrow. Any two of them can overlap.
+the server starting, the Today screen asking for it on a day with nothing
+prepared (a POST its page sends as it loads, never the GET), and the end of a
+session, for tomorrow. Any two of them can overlap.
 
 The order of operations is the whole design:
 

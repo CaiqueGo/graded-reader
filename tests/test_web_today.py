@@ -105,12 +105,45 @@ def ready_today(drop_in: Callable[..., Path], *, status: str = "ready") -> int:
 # --- the front door -----------------------------------------------------------------
 
 
-def test_opening_an_empty_day_starts_writing_its_text(client: Client, started: list[date]) -> None:
+def test_opening_the_page_starts_nothing_by_itself(client: Client, started: list[date]) -> None:
+    """Another site can make the browser GET this page; that must cost nothing."""
     response = client.get("/")
 
     assert response.status_code == 200
+    assert started == []
+
+
+def test_an_empty_day_asks_for_its_text_with_a_post_as_it_loads(client: Client) -> None:
+    page = client.get("/").text
+
+    assert 'hx-post="/today/start"' in page
+    assert 'hx-trigger="load"' in page
+
+
+def test_starting_an_empty_day_writes_its_text(client: Client, started: list[date]) -> None:
+    response = client.post("/today/start")
+
     assert "Writing today" in response.text
     assert started == [today()]
+
+
+def test_starting_does_not_retry_a_day_that_failed(
+    client: Client, started: list[date], drop_in: Callable[..., Path]
+) -> None:
+    """Retrying spends the plan again; that is the retry button's decision."""
+    ready_today(drop_in, status="failed")
+
+    response = client.post("/today/start")
+
+    assert "could not be prepared" in response.text
+    assert started == []
+
+
+def test_another_site_cannot_start_the_day(client: Client, started: list[date]) -> None:
+    response = client.request("POST", "/today/start", headers={"Sec-Fetch-Site": "cross-site"})
+
+    assert response.status_code == 403
+    assert started == []
 
 
 def test_a_ready_day_shows_its_text_audio_and_exercises(
