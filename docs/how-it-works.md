@@ -332,8 +332,11 @@ Worth knowing before trusting it too far:
 - **There is no authentication.** `reader serve` listens on localhost only, and it
   should stay that way. Whoever reaches the port reads and changes the deck. Other
   websites cannot change anything through your browser — requests that change
-  something must come from the app's own pages (see `web/origin.py`) — but DNS
-  rebinding is not covered; see the README's "Known limits".
+  something must come from the app's own pages (see `web/origin.py`), and a request
+  must be addressed to `127.0.0.1`, `localhost` or `[::1]`, which is what stops a
+  hostile name pointed at `127.0.0.1` from reading the app (DNS rebinding; see
+  `web/host.py`). Both stop browser pages, not programs: anything that reaches the
+  port can send whatever headers it likes. See the README's "Known limits".
 - **Coverage does not measure grammar.** Only vocabulary.
 - **The bands are calibrated guesses**, not official CEFR truth.
 - **Lemmatisation gets phrasal verbs wrong.** `give up` becomes `give`. You can

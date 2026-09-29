@@ -19,6 +19,8 @@ DEFAULT_INBOX_DIR = "inbox"
 VAR_DB_PATH = "GRADED_READER_DB"
 DEFAULT_DB_NAME = "graded-reader.db"
 
+VAR_SERVE_HOST = "GRADED_READER_SERVE_HOST"
+
 NGSL_FILENAME = "ngsl.csv"
 BANDS_FILENAME = "bands.toml"
 LEVELS_FILENAME = "levels.toml"
@@ -56,6 +58,16 @@ def situations_path() -> Path:
 def db_path() -> Path:
     """The SQLite file. One process, one file, and a backup is a copy."""
     return Path(os.environ.get(VAR_DB_PATH, DEFAULT_DB_NAME))
+
+
+def serve_host() -> str | None:
+    """The address ``reader serve`` binds to, or None when it is not the one serving.
+
+    ``serve`` sets it, because uvicorn imports the app by name and no argument
+    reaches it -- least of all with ``--reload``, which runs it in another
+    process. The app answers to this name as well as to localhost; see web.host.
+    """
+    return os.environ.get(VAR_SERVE_HOST) or None
 
 
 def inbox_dir() -> Path:

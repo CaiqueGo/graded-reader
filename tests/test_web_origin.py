@@ -26,8 +26,8 @@ from graded_reader.web.origin import is_cross_site
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db", "tmp_inbox")
 
-#: What httpx sends as Host for base_url="http://test".
-OWN_ORIGIN = "http://test"
+#: The app answers only to a loopback name (see web.host), so the tests use one.
+OWN_ORIGIN = "http://localhost:8000"
 FROM_ANOTHER_SITE = {"Sec-Fetch-Site": "cross-site", "Origin": "https://evil.example"}
 
 
@@ -152,9 +152,9 @@ def test_an_unknown_fetch_site_value_is_refused() -> None:
 
 def test_without_the_fetch_header_the_origin_must_be_this_app() -> None:
     assert not post(origin=OWN_ORIGIN)
-    assert not post(origin="HTTP://TEST"), "origins compare without case"
-    assert post(origin="http://test:3000")
-    assert post(origin="https://test"), "another scheme is another origin"
+    assert not post(origin="HTTP://LOCALHOST:8000"), "origins compare without case"
+    assert post(origin="http://localhost:3000")
+    assert post(origin="https://localhost:8000"), "another scheme is another origin"
     assert post(origin="null"), "what a sandboxed page or a file:// page sends"
 
 

@@ -27,6 +27,9 @@ from graded_reader.web.app import create_app
 
 pytestmark = pytest.mark.usefixtures("tmp_data", "tmp_db", "tmp_inbox")
 
+#: The app answers only to a loopback name (see web.host), so the tests use one.
+BASE_URL = "http://127.0.0.1:8000"
+
 GLOSSARY: list[dict[str, Any]] = [
     {"en": "rock", "pt": "rocha", "example_en": "They put the water under a rock."},
 ]
@@ -58,7 +61,7 @@ class Client:
     def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         async def send() -> httpx.Response:
             transport = httpx.ASGITransport(app=self.app)
-            async with httpx.AsyncClient(transport=transport, base_url="http://test") as http:
+            async with httpx.AsyncClient(transport=transport, base_url=BASE_URL) as http:
                 return await http.request(method, url, **kwargs)
 
         return anyio.run(send)

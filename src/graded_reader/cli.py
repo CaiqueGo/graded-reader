@@ -7,6 +7,7 @@ in the modules, not in this file.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Annotated
@@ -281,13 +282,26 @@ def serve(
         error_console.print("[red]error:[/red] web extras missing. Run: uv pip install -e '.[web]'")
         raise typer.Exit(code=1) from None
 
-    if host not in {"127.0.0.1", "localhost", "::1"}:
+    from graded_reader.web.host import LOOPBACK_NAMES, as_host_name, is_wildcard
+
+    if as_host_name(host) not in LOOPBACK_NAMES:
         error_console.print(
             f"[yellow]warning:[/yellow] binding to {host}, which is not localhost. "
             "This app has no authentication."
         )
+    # The app answers only to the names it is served on (web.host), and uvicorn
+    # imports it by name, so the address travels by environment -- which a
+    # --reload worker process inherits too.
+    os.environ[config.VAR_SERVE_HOST] = host
+    if is_wildcard(host):
+        error_console.print(
+            f"[yellow]warning:[/yellow] {host} names no address, so the app answers only "
+            "to 127.0.0.1 and localhost. To open it from another device, pass this "
+            "computer's address to --host instead."
+        )
 
-    console.print(f"reading at [cyan]http://{host}:{port}[/cyan]  (ctrl-c to stop)")
+    shown = "127.0.0.1" if is_wildcard(host) else as_host_name(host)
+    console.print(f"reading at [cyan]http://{shown}:{port}[/cyan]  (ctrl-c to stop)")
     uvicorn.run(
         "graded_reader.web.app:app", host=host, port=port, reload=reload, log_level="warning"
     )

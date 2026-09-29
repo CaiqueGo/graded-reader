@@ -165,12 +165,22 @@ neither header — curl, the tests — passes, since the threat is a page in a b
 - **Reading.** A GET is never refused. Another site cannot see the answer, but opening
   `/` does start writing today's text if nothing has started it yet — the same run your
   own first visit would start. A failed day is retried only by its button, a POST.
-- **DNS rebinding.** A hostile name that resolves to `127.0.0.1` makes its page the
-  app's own origin as far as the browser can tell, so these headers pass — and that
-  page can read the answers too. Refusing any `Host` other than `127.0.0.1` and
-  `localhost` would close it; the app does not do that yet.
 - **Anything else on this computer.** A program running as you can call the app
   directly, with whatever headers it likes.
+
+**A hostile name pointed at `127.0.0.1` gets nothing (DNS rebinding).** A site can
+serve a page from `evil.example:8000` and then point its own DNS at `127.0.0.1`. To the
+browser, that page is now the app's own origin, so the checks above pass — and it can
+read the answers too: the deck, the texts, the settings. What the browser cannot hide is
+the name it used, which every request carries in `Host`. So the app answers only when
+`Host` is `127.0.0.1`, `localhost` or `[::1]` (any port), and refuses anything else with
+a 400. See `web/host.py`.
+
+`reader serve --host` adds the address it binds to, so `--host 192.168.0.10` answers to
+`192.168.0.10` as well. A wildcard such as `0.0.0.0` names no address and adds none: the
+app then answers to localhost only, and `serve` says so. None of this is access control
+— a program that reaches the port can send any `Host` it likes. It stops browser pages,
+which is where the threat is.
 
 **Links from news feeds are different, and are guarded.** A feed's links are chosen by
 whoever runs the feed, not by you, so a hostile feed could point the app at an address

@@ -21,8 +21,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from graded_reader import __version__, preparation
+from graded_reader import __version__, config, preparation
 from graded_reader.web.assets import static_url
+from graded_reader.web.host import RefuseForeignHost, allowed_hosts
 from graded_reader.web.origin import RefuseCrossSite
 from graded_reader.web.routes import router
 
@@ -68,6 +69,9 @@ def create_app() -> FastAPI:
     # Any page on any site can post a form here; this refuses the ones that
     # did not come from the app itself. See web.origin.
     app.add_middleware(RefuseCrossSite)
+    # Added last so it runs first: the check above trusts the Host header, and
+    # this refuses a name the app is not served on -- DNS rebinding. See web.host.
+    app.add_middleware(RefuseForeignHost, allowed=allowed_hosts(config.serve_host()))
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     app.include_router(router)
     return app
